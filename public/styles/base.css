@@ -100,8 +100,8 @@ input, textarea, select, button {
 
 /* Logo: tidak ada background, hanya gambar / teks */
 .sb-mark {
-  width: 38px;
-  height: 38px;
+  width: 52px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -110,8 +110,8 @@ input, textarea, select, button {
 }
 
 .sb-mark img {
-  width: 38px;
-  height: 38px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
   display: block;
 }
