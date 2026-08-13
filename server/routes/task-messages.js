@@ -3,9 +3,10 @@ const TaskMessage = require('../models/TaskMessage');
 const Task        = require('../models/Task');
 const auth        = require('../middleware/auth');
 const { getIO }   = require('../socket');
+const { TOP_TIER_ROLES } = require('../middleware/roles');
 
 function canAccess(user, task) {
-  if (['direksi','superadmin'].includes(user.role)) return true;
+  if (TOP_TIER_ROLES.includes(user.role)) return true;
   if (task.dibuatOleh?.toString() === user._id.toString()) return true;
   return (task.assignees || []).some(c => c.toString() === user._id.toString());
 }
@@ -50,7 +51,7 @@ router.delete('/:msgId', auth, async (req, res) => {
   if (!msg) return res.status(404).json({ message: 'Pesan tidak ditemukan' });
 
   const isOwner = msg.userId.toString() === req.user._id.toString();
-  const isAdmin = ['direksi','superadmin'].includes(req.user.role);
+  const isAdmin = TOP_TIER_ROLES.includes(req.user.role);
   if (!isOwner && !isAdmin) return res.status(403).json({ message: 'Akses ditolak' });
 
   await msg.deleteOne();

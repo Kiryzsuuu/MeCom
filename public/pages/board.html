@@ -167,7 +167,7 @@ let dragTaskId  = null;
 let dragFromStatus = null;
 
 function renderBoard(tasks) {
-  const isDireksi = user?.role === 'direksi' || user?.role === 'superadmin';
+  const isDireksi = ['sekretaris_coe', 'direktur_coe', 'wakil_direktur_coe'].includes(user?.role);
   const cols = COLUMNS.filter(c => !c.direksiOnly || isDireksi);
 
   document.getElementById('board-cols').innerHTML = cols.map(col => {
@@ -246,7 +246,7 @@ async function onDrop(e, toStatus) {
 }
 
 async function initFilters() {
-  if (user?.role === 'direksi') {
+  if (user?.role === 'sekretaris_coe') {
     const dirs = await Direktorat.list();
     const sel  = document.getElementById('f-direktorat');
     sel.style.display = '';

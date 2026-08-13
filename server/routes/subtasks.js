@@ -6,17 +6,18 @@ const Evidence = require('../models/Evidence');
 const auth     = require('../middleware/auth');
 const push     = require('../services/push');
 const notifSvc = require('../services/notifikasi');
+const { TOP_TIER_ROLES } = require('../middleware/roles');
 
 function idStr(v) { return v?._id?.toString() || v?.toString() || ''; }
 function isCreator(user, task) {
   if (idStr(task.dibuatOleh) === user._id.toString()) return true;
   return (task.creators || []).map(idStr).includes(user._id.toString());
 }
-function isDireksi(user) { return ['direksi', 'superadmin'].includes(user.role); }
+function isDireksi(user) { return TOP_TIER_ROLES.includes(user.role); }
 function canManage(user, task) { return isDireksi(user) || isCreator(user, task); }
 function isSubAssignee(user, sub) { return (sub.assignees || []).map(idStr).includes(user._id.toString()); }
-// Direktur/komisaris/superadmin = validator global, atau ditunjuk eksplisit pada subtask
-const APPROVER_ROLES = ['direksi', 'komisaris', 'superadmin'];
+// Direktur CoE/Wakil Direktur CoE/Sekretaris CoE = validator global, atau ditunjuk eksplisit pada subtask
+const APPROVER_ROLES = TOP_TIER_ROLES;
 function isSubValidator(user, sub) {
   if (APPROVER_ROLES.includes(user.role)) return true;
   return (sub.validators || []).map(idStr).includes(user._id.toString());
@@ -78,7 +79,7 @@ router.put('/reorder/batch', auth, async (req, res) => {
 router.post('/:id/submit', auth, async (req, res) => {
   const sub = await Subtask.findById(req.params.id);
   if (!sub) return res.status(404).json({ message: 'Subtask tidak ditemukan' });
-  if (!isSubAssignee(req.user, sub) && req.user.role !== 'superadmin')
+  if (!isSubAssignee(req.user, sub) && !TOP_TIER_ROLES.includes(req.user.role))
     return res.status(403).json({ message: 'Hanya assignee subtask yang dapat mengirim' });
 
   if (req.body.workNote !== undefined) sub.workNote = req.body.workNote;
@@ -86,8 +87,8 @@ router.post('/:id/submit', auth, async (req, res) => {
   sub.pendingApproval = true;
   await sub.save();
 
-  // Notif ke Task Approval — in-app + push. Direktur/komisaris = validator global.
-  const direktur = await User.find({ role: { $in: ['direksi','komisaris'] }, statusAktif: true }).select('_id');
+  // Notif ke Task Approval — in-app + push. Top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) = validator global.
+  const direktur = await User.find({ role: { $in: ['sekretaris_coe','wakil_direktur_coe'] }, statusAktif: true }).select('_id');
   const targetIds = new Set([
     ...(sub.validators || []).map(idStr),
     ...direktur.map(d => d._id.toString()),
@@ -114,7 +115,7 @@ router.post('/:id/approve', auth, async (req, res) => {
   const { approve } = req.body;
   const sub = await Subtask.findById(req.params.id);
   if (!sub) return res.status(404).json({ message: 'Subtask tidak ditemukan' });
-  if (!isSubValidator(req.user, sub) && req.user.role !== 'superadmin')
+  if (!isSubValidator(req.user, sub) && !TOP_TIER_ROLES.includes(req.user.role))
     return res.status(403).json({ message: 'Hanya Task Approval yang ditunjuk yang dapat approve' });
 
   if (approve === false) {
@@ -202,7 +203,7 @@ router.put('/:id', auth, async (req, res) => {
 
   const manage   = canManage(req.user, task);
   const assignee = isSubAssignee(req.user, sub);
-  const isSuper  = req.user.role === 'superadmin';
+  const isSuper  = TOP_TIER_ROLES.includes(req.user.role);
 
   // Status & catatan kerja: hanya assignee subtask. Tidak boleh set 'done' manual (lewat approval).
   if (req.body.status !== undefined || req.body.workNote !== undefined || req.body.isDone !== undefined) {

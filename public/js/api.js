@@ -138,7 +138,7 @@ const Users = {
     return apiFetch('/users' + (qs ? '?' + qs : ''));
   },
   async managersByDirektorat(id) {
-    return apiFetch(`/users/managers-direktorat/${id}`);
+    return apiFetch(`/users/dosen-direktorat/${id}`);
   },
   // Daftar user aktif yang bisa dipilih sebagai assignee (semua user login)
   async selectable(params = {}) {
@@ -206,7 +206,7 @@ const Tasks = {
   async pendingApproval() {
     return apiFetch('/tasks/pending-approval');
   },
-  // Clean Reset Data (superadmin) — butuh re-auth + kalimat konfirmasi
+  // Clean Reset Data (top-tier) — butuh re-auth + kalimat konfirmasi
   async resetData({ enik, password, confirm }) {
     return apiFetch('/tasks/reset-data', { method: 'POST', body: JSON.stringify({ enik, password, confirm }) });
   },

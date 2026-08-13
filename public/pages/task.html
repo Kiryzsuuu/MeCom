@@ -337,8 +337,8 @@ function renderTask(t) {
   document.getElementById('m-creator').textContent = t.dibuatOleh?.namaLengkap || '—';
   document.getElementById('m-created').textContent = formatTanggal(t.createdAt);
 
-  const isSuper   = user?.role === 'superadmin';
-  const isDireksi = ['direksi','superadmin'].includes(user?.role);
+  const isSuper   = user?.role === 'direktur_coe';
+  const isDireksi = ['sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user?.role);
   const isMainCreator = t.dibuatOleh?._id === user?._id || t.dibuatOleh === user?._id;
   const isCreator = isMainCreator || (t.creators || []).some(c => (c._id || c) === user?._id);
   const isAssignee = assigneesArr.some(a => (a._id || a) === user?._id);
@@ -390,7 +390,7 @@ function renderTask(t) {
     rn.style.display = 'block';
   }
 
-  // Edit: creator (utama/co) atau direksi. Hapus: superadmin/direksi atau creator task ini (req batch 4b).
+  // Edit: creator (utama/co) atau top-tier. Hapus: top-tier atau creator task ini (req batch 4b).
   if (isDireksi || (isCreator && t.status !== 'complete')) {
     document.getElementById('btn-edit').style.display = '';
   }
@@ -402,20 +402,20 @@ function renderTask(t) {
 
 function renderStatusActions(t) {
   const el        = document.getElementById('status-actions');
-  const isSuper   = user?.role === 'superadmin';
+  const isSuper   = user?.role === 'direktur_coe';
   const isCreator = (t.dibuatOleh?._id === user?._id || t.dibuatOleh === user?._id) ||
                     (t.creators || []).some(c => (c._id || c) === user?._id);
   const assigneesArr = t.assignees || [];
   const isAssignee = assigneesArr.some(a => (a._id || a) === user?._id);
-  // Direktur/komisaris/superadmin = validator global, atau ditunjuk eksplisit
-  const isValidator = ['direksi','komisaris','superadmin'].includes(user?.role) ||
+  // Top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) = validator global, atau ditunjuk eksplisit
+  const isValidator = ['sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user?.role) ||
                       (t.validators || []).some(v => (v._id || v) === user?._id);
   const completedIds = (t.completedBy || []).map(c => c._id || c);
   const meDone = completedIds.includes(user?._id);
 
   let html = '';
 
-  // Validator (atau superadmin): approve/reject saat menunggu approval
+  // Validator (atau top-tier): approve/reject saat menunggu approval
   if ((isValidator || isSuper) && t.status !== 'complete') {
     if (t.pendingApproval) {
       html += `<button class="btn btn-primary" style="font-size:13px" onclick="approveTask(true)"><i class="ti ti-check"></i> Approve (Selesai)</button>`;
@@ -507,11 +507,11 @@ function renderSubtasks(subtasks) {
   if (!total) { el.innerHTML = '<div style="color:var(--text-3);font-size:12px">Belum ada subtask. Tambahkan lewat tombol Edit.</div>'; return; }
 
   const prioLabel = { low: '🟢 Low', medium: '🟡 Medium', high: '🔴 High' };
-  const isSuper = user?.role === 'superadmin';
-  const isDireksi = ['direksi','superadmin'].includes(user?.role);
+  const isSuper = user?.role === 'direktur_coe';
+  const isDireksi = ['sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user?.role);
   const isCreatorTask = taskData?.dibuatOleh?._id === user?._id || taskData?.dibuatOleh === user?._id
     || (taskData?.creators || []).some(c => (c._id || c) === user?._id);
-  // Superadmin/direksi/creator boleh hapus subtask & sub-subtask langsung dari sini (req batch 4d)
+  // Top-tier/creator boleh hapus subtask & sub-subtask langsung dari sini (req batch 4d)
   const canDeleteSub = isSuper || isDireksi || isCreatorTask;
 
   function children(parentId) {
@@ -522,8 +522,8 @@ function renderSubtasks(subtasks) {
     const names     = (s.assignees || []).map(a => a.namaLengkap || '').filter(Boolean);
     const valNames  = (s.validators || []).map(a => a.namaLengkap || '').filter(Boolean);
     const meAssigned= (s.assignees || []).some(a => (a._id || a) === user?._id);
-    // Direktur/komisaris/superadmin = validator global, atau ditunjuk eksplisit
-    const meValidator= ['direksi','komisaris','superadmin'].includes(user?.role) ||
+    // Top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) = validator global, atau ditunjuk eksplisit
+    const meValidator= ['sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user?.role) ||
                        (s.validators || []).some(a => (a._id || a) === user?._id);
     const dueDateTx = s.dueDate ? new Date(s.dueDate).toLocaleDateString('id-ID', { day:'numeric', month:'short' }) : null;
     const overdue   = s.dueDate && st !== 'done' && new Date(s.dueDate) < new Date();
@@ -645,7 +645,7 @@ function renderEvidence(evidences) {
   if (!el) return; // section lampiran global dihapus — lampiran kini per-subtask
   if (!evidences.length) { el.innerHTML = '<div style="color:var(--text-3);font-size:13px">Belum ada evidence</div>'; return; }
 
-  const isDireksi = ['direksi','superadmin'].includes(user?.role);
+  const isDireksi = ['sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user?.role);
   const isCreator = taskData?.dibuatOleh?._id === user?._id || taskData?.dibuatOleh === user?._id;
   const isAssignee= (taskData?.assignees || []).some(a => (a._id || a) === user?._id);
 
@@ -859,7 +859,7 @@ function showMentionPopup(ta) {
   mentionIdx   = -1;
   mentionActive = true;
 
-  const ROLE_MAP = { superadmin:'Superadmin', komisaris:'Komisaris', direksi:'Direksi', manager:'Manager', staff:'Staff' };
+  const ROLE_MAP = { direktur_coe:'Direktur CoE', wakil_direktur_coe:'Wakil Direktur CoE', sekretaris_coe:'Sekretaris CoE', dosen:'Dosen' };
   popup.innerHTML = mentionFiltered.map((u, i) => {
     const inits = u.namaLengkap.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
     return `<div class="mention-item" data-idx="${i}" onmousedown="pickMention(${i})">
@@ -995,7 +995,7 @@ async function removeDependency(depId) {
 
 // ── Recurring ────────────────────────────────────────────────────────────────
 function initRecurringUI(task) {
-  const isMgrOrAbove = ['superadmin','direksi','komisaris','manager'].includes(user?.role);
+  const isMgrOrAbove = ['direktur_coe','sekretaris_coe','wakil_direktur_coe','dosen'].includes(user?.role);
   if (!isMgrOrAbove) return;
 
   document.getElementById('recurring-section').style.display = '';
@@ -1032,7 +1032,7 @@ async function saveRecurrence() {
 
 // ── Template ─────────────────────────────────────────────────────────────────
 function initTemplateSection() {
-  const isMgrOrAbove = ['superadmin','direksi','komisaris','manager'].includes(user?.role);
+  const isMgrOrAbove = ['direktur_coe','sekretaris_coe','wakil_direktur_coe','dosen'].includes(user?.role);
   if (isMgrOrAbove) document.getElementById('template-save-section').style.display = '';
 }
 

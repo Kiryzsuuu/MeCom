@@ -6,6 +6,7 @@ const mailer   = require('../services/mailer');
 const wa       = require('../services/whatsapp');
 const { simpanSnapshot } = require('../services/kpi');
 const push     = require('../services/push');
+const { TOP_TIER_ROLES } = require('../middleware/roles');
 
 function hariKerja(tanggal) {
   const hari = tanggal.getDay();
@@ -41,10 +42,10 @@ function startCronJobs() {
             await wa.sendWADeadlineReminder(pic, task, hari);
           }
 
-          // H-1: notif ke Direksi juga
+          // H-1: notif ke top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) juga
           if (hari === 1) {
             const namaAssignee = assignees.map(a => a.namaLengkap).join(', ') || '-';
-            const direksi = await User.find({ role: 'direksi', statusAktif: true });
+            const direksi = await User.find({ role: { $in: TOP_TIER_ROLES }, statusAktif: true });
             for (const d of direksi) {
               await notifSvc.buatNotifikasi({
                 userId: d._id,
@@ -76,7 +77,7 @@ function startCronJobs() {
         deadline:   { $lt: now },
       }).populate('assignees');
 
-      const direksi = await User.find({ role: 'direksi', statusAktif: true });
+      const direksi = await User.find({ role: { $in: TOP_TIER_ROLES }, statusAktif: true });
 
       for (const task of tasks) {
         const assignees = task.assignees || [];
@@ -160,20 +161,20 @@ function startCronJobs() {
       const now      = new Date();
       const bulan    = now.getMonth() === 0 ? 12 : now.getMonth();
       const tahun    = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-      const managers = await User.find({ role: 'manager', statusAktif: true });
+      const managers = await User.find({ role: 'dosen', statusAktif: true });
       for (const m of managers) {
         await simpanSnapshot(m._id, bulan, tahun).catch(() => {});
       }
-      console.log(`[Cron KPI] Snapshot ${bulan}/${tahun} disimpan untuk ${managers.length} manager`);
+      console.log(`[Cron KPI] Snapshot ${bulan}/${tahun} disimpan untuk ${managers.length} dosen`);
     } catch (err) {
       console.error('[Cron KPI]', err.message);
     }
   });
 
-  // ── Setiap hari jam 08:05 — daily digest untuk Direksi ───────────────────────
+  // ── Setiap hari jam 08:05 — daily digest untuk top-tier ──────────────────────
   cron.schedule('5 8 * * 1-5', async () => {
     try {
-      const direksi = await User.find({ role: 'direksi', statusAktif: true });
+      const direksi = await User.find({ role: { $in: TOP_TIER_ROLES }, statusAktif: true });
       const now = new Date();
       const today = new Date(now); today.setHours(23, 59, 59, 999);
       const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);

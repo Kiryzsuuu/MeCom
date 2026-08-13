@@ -62,7 +62,7 @@
 <script>
 if (!requireAuth()) throw 'redirect';
 const user = getUser();
-if (user.role !== 'superadmin') { window.location.href='/pages/dashboard.html'; throw 'no access'; }
+if (!['direktur_coe','wakil_direktur_coe','sekretaris_coe'].includes(user.role)) { window.location.href='/pages/dashboard.html'; throw 'no access'; }
 
 let allTasks = [];
 let subCache = {};   // taskId -> array subtask

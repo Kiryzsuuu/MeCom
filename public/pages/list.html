@@ -338,7 +338,7 @@ async function exportExcel() {
 }
 
 async function initFilters() {
-  if (user?.role === 'direksi') {
+  if (user?.role === 'sekretaris_coe') {
     const dirs = await Direktorat.list();
     const sel  = document.getElementById('f-direktorat');
     sel.style.display = '';

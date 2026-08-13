@@ -66,7 +66,7 @@ async function notifTaskDone(pic, task) {
     userId: pic._id,
     jenis:  'task_done',
     judul:  'Hasil kerja disetujui',
-    isi:    `Task "${task.judul}" selesai dan disetujui oleh Sekretaris CoE.`,
+    isi:    `Task "${task.judul}" selesai dan disetujui.`,
     taskId: task._id,
   });
 }

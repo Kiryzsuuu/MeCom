@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const User   = require('../models/User');
 const auth   = require('../middleware/auth');
+const { TOP_TIER_ROLES } = require('../middleware/roles');
 const { sendMail } = require('../services/mailer');
 
 // OTP store: { email -> { otp, expiry, userId } }
@@ -184,15 +185,15 @@ router.post('/reset-password', async (req, res) => {
   res.json({ message: 'Password berhasil direset, silakan login' });
 });
 
-// POST /api/auth/impersonate/:userId — superadmin menyamar sebagai user lain
+// POST /api/auth/impersonate/:userId — top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) menyamar sebagai user lain
 router.post('/impersonate/:userId', auth, async (req, res) => {
-  if (req.user.role !== 'superadmin')
-    return res.status(403).json({ message: 'Hanya superadmin yang dapat melakukan impersonasi' });
+  if (!TOP_TIER_ROLES.includes(req.user.role))
+    return res.status(403).json({ message: 'Hanya Direktur CoE/Wakil Direktur CoE/Sekretaris CoE yang dapat melakukan impersonasi' });
 
   const target = await User.findById(req.params.userId).populate('direktoratId');
   if (!target) return res.status(404).json({ message: 'User tidak ditemukan' });
   if (!target.statusAktif) return res.status(400).json({ message: 'Akun target tidak aktif' });
-  if (target.role === 'superadmin') return res.status(400).json({ message: 'Tidak dapat menyamar sebagai superadmin lain' });
+  if (TOP_TIER_ROLES.includes(target.role)) return res.status(400).json({ message: 'Tidak dapat menyamar sebagai akun top-tier lain' });
 
   const token = jwt.sign(
     { id: target._id, impersonatedBy: req.user._id.toString() },

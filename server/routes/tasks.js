@@ -5,7 +5,7 @@ const Subtask   = require('../models/Subtask');
 const Evidence  = require('../models/Evidence');
 const StatusLog = require('../models/StatusLog');
 const auth      = require('../middleware/auth');
-const { requireRole } = require('../middleware/roles');
+const { requireRole, TOP_TIER_ROLES } = require('../middleware/roles');
 const notifSvc  = require('../services/notifikasi');
 const mailer    = require('../services/mailer');
 const wa        = require('../services/whatsapp');
@@ -33,16 +33,16 @@ function isCreator(user, task) {
   if (isMainCreator(user, task)) return true;
   return (task.creators || []).map(idStr).includes(user._id.toString());
 }
-// Role yang otomatis jadi approver/validator (direktur & komisaris selalu validator)
-const APPROVER_ROLES = ['direksi', 'komisaris', 'superadmin'];
-// Validator: semua direktur/komisaris otomatis validator, ATAU ditunjuk eksplisit
+// Role yang otomatis jadi approver/validator (semua top-tier: direktur/wakil direktur/sekretaris CoE)
+const APPROVER_ROLES = TOP_TIER_ROLES;
+// Validator: semua top-tier otomatis validator, ATAU ditunjuk eksplisit
 function isValidator(user, task) {
   if (APPROVER_ROLES.includes(user.role)) return true;
   return (task.validators || []).map(idStr).includes(user._id.toString());
 }
 
 function isDireksiRole(user) {
-  return ['direksi', 'superadmin'].includes(user.role);
+  return TOP_TIER_ROLES.includes(user.role);
 }
 
 // Status MAIN TASK independen dari subtask (req: subtask tidak memengaruhi main task).
@@ -109,9 +109,9 @@ router.get('/', auth, async (req, res) => {
   if (mine === 'true')         filter.assignees    = req.user._id; // task yang di-assign ke saya
   if (search)                  filter.judul        = { $regex: search, $options: 'i' };
 
-  // Req #11e: user biasa (manager/staff) hanya melihat task yang terkait dirinya.
-  // Superadmin/direksi/komisaris = pemantau global → lihat semua task.
-  const GLOBAL_VIEW_ROLES = ['superadmin', 'direksi', 'komisaris'];
+  // Req #11e: user biasa (dosen) hanya melihat task yang terkait dirinya.
+  // Direktur CoE/Wakil Direktur CoE/Sekretaris CoE = pemantau global → lihat semua task.
+  const GLOBAL_VIEW_ROLES = ['direktur_coe', 'sekretaris_coe', 'wakil_direktur_coe'];
   if (!GLOBAL_VIEW_ROLES.includes(req.user.role) && mine !== 'true') {
     const uid = req.user._id;
     filter.$or = [
@@ -157,8 +157,8 @@ router.get('/', auth, async (req, res) => {
   res.json({ total, page: parseInt(page), tasks });
 });
 
-// ── GET /api/tasks/deleted — Direksi lihat arsip soft-delete ─────────────────
-router.get('/deleted', auth, requireRole('direksi'), async (req, res) => {
+// ── GET /api/tasks/deleted — Sekretaris CoE lihat arsip soft-delete ──────────
+router.get('/deleted', auth, requireRole('sekretaris_coe'), async (req, res) => {
   const tasks = await Task.find({ isDeleted: true })
     .populate('assignees', 'namaLengkap')
     .populate('direktoratId', 'nama kode')
@@ -184,7 +184,7 @@ router.put('/bulk-status', auth, async (req, res) => {
       const task = await Task.findById(id);
       if (!task) continue;
 
-      // Hanya creator / assignee / direksi yang bisa ubah status
+      // Hanya creator / assignee / top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) yang bisa ubah status
       if (!isDireksi && !isCreator(req.user, task) && !isAssignee(req.user, task)) continue;
 
       task.status = statusBaru;
@@ -247,7 +247,7 @@ router.post('/', auth, async (req, res) => {
 // ── GET /api/tasks/pending-approval — antrian approval untuk validator ────────
 // (Harus sebelum '/:id' agar tidak dianggap id)
 router.get('/pending-approval', auth, async (req, res) => {
-  // Direktur/komisaris/superadmin = validator global → lihat SEMUA antrian approval.
+  // Semua top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) = validator global → lihat SEMUA antrian approval.
   const isApprover = APPROVER_ROLES.includes(req.user.role);
   const filter = { isDeleted: false, status: { $ne: 'complete' }, pendingApproval: true };
   if (!isApprover) filter.validators = req.user._id;
@@ -282,7 +282,7 @@ router.get('/:id', auth, async (req, res) => {
     .populate('completedBy', 'namaLengkap fotoProfil')
     .populate('milestoneId', 'judul warna');
 
-  if (!task || (task.isDeleted && req.user.role !== 'direksi'))
+  if (!task || (task.isDeleted && !TOP_TIER_ROLES.includes(req.user.role)))
     return res.status(404).json({ message: 'Task tidak ditemukan' });
 
   const [subtasks, evidences, logs] = await Promise.all([
@@ -343,7 +343,7 @@ router.post('/:id/cover', auth, async (req, res) => {
 });
 
 // ── PUT /api/tasks/:id/status — ubah status manual ───────────────────────────
-// Creator/direksi bisa set status apa saja. Assignee bisa set to_do/on_progress.
+// Creator/top-tier bisa set status apa saja. Assignee bisa set to_do/on_progress.
 router.put('/:id/status', auth, async (req, res) => {
   const { statusBaru } = req.body;
   const validStatuses = ['to_do', 'on_progress', 'partially_complete', 'complete'];
@@ -354,7 +354,7 @@ router.put('/:id/status', auth, async (req, res) => {
   if (!task || task.isDeleted)
     return res.status(404).json({ message: 'Task tidak ditemukan' });
 
-  const isSuper   = req.user.role === 'superadmin';
+  const isSuper   = TOP_TIER_ROLES.includes(req.user.role);
   const creator   = isCreator(req.user, task);
   const assignee  = isAssignee(req.user, task);
   const validator = isValidator(req.user, task);
@@ -362,7 +362,7 @@ router.put('/:id/status', auth, async (req, res) => {
   if (!isSuper && !creator && !assignee && !validator)
     return res.status(403).json({ message: 'Akses ditolak' });
 
-  // 'complete' lewat approval validator, ATAU override manual oleh creator/superadmin
+  // 'complete' lewat approval validator, ATAU override manual oleh creator/top-tier
   // (creator boleh menutup main task kapan saja, terlepas dari progress subtask).
   if (statusBaru === 'complete' && !isSuper && !creator)
     return res.status(403).json({ message: 'Task hanya bisa di-Complete lewat approval validator atau oleh creator' });
@@ -416,9 +416,9 @@ router.post('/:id/complete-mine', auth, async (req, res) => {
   await task.populate('completedBy', 'namaLengkap fotoProfil');
 
   // Notif saat semua assignee selesai → minta approval (in-app + push).
-  // Direktur/komisaris adalah validator global, jadi semua dapat notif (plus validator eksplisit).
+  // Semua top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) adalah validator global, jadi semua dapat notif (plus validator eksplisit).
   if (task.pendingApproval) {
-    const direktur = await User.find({ role: { $in: ['direksi','komisaris'] }, statusAktif: true }).select('_id');
+    const direktur = await User.find({ role: { $in: TOP_TIER_ROLES }, statusAktif: true }).select('_id');
     const targetIds = new Set([
       ...(task.validators || []).map(idStr),
       ...direktur.map(d => d._id.toString()),
@@ -446,9 +446,9 @@ router.post('/:id/approve', auth, async (req, res) => {
   const task = await Task.findById(req.params.id).populate('assignees').populate('dibuatOleh');
   if (!task || task.isDeleted) return res.status(404).json({ message: 'Task tidak ditemukan' });
 
-  const isSuper = req.user.role === 'superadmin';
+  const isSuper = TOP_TIER_ROLES.includes(req.user.role);
   if (!isSuper && !isValidator(req.user, task))
-    return res.status(403).json({ message: 'Hanya Task Approval (direktur/komisaris) yang ditunjuk yang dapat approve' });
+    return res.status(403).json({ message: 'Hanya Task Approval (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) yang ditunjuk yang dapat approve' });
 
   const statusLama = task.status;
   if (approve === false) {
@@ -540,12 +540,12 @@ function nextRunDate(fromDate, tipe, interval) {
   return d;
 }
 
-// ── POST /api/tasks/reset-data — Clean Reset Data (Superadmin) ───────────────
+// ── POST /api/tasks/reset-data — Clean Reset Data (top-tier: Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) ──
 // Hapus SEMUA data task & turunannya, TANPA menyentuh user/akun.
 const RESET_PHRASE = 'Saya yang bertanggung jawab dalam menghapus data ini';
 router.post('/reset-data', auth, async (req, res) => {
-  if (req.user.role !== 'superadmin')
-    return res.status(403).json({ message: 'Hanya admin (superadmin) yang dapat reset data' });
+  if (!TOP_TIER_ROLES.includes(req.user.role))
+    return res.status(403).json({ message: 'Hanya admin (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) yang dapat reset data' });
 
   const { enik, password, confirm } = req.body;
   // Re-auth wajib
@@ -580,13 +580,13 @@ router.post('/reset-data', auth, async (req, res) => {
   res.json({ message: 'Clean reset selesai. Data task dihapus, akun user tetap aman.', results });
 });
 
-// ── DELETE /api/tasks/:id (soft delete) ── Superadmin saja ───────────────────
+// ── DELETE /api/tasks/:id (soft delete) ── top-tier saja ─────────────────────
 router.delete('/:id', auth, async (req, res) => {
   const task = await Task.findById(req.params.id);
   if (!task) return res.status(404).json({ message: 'Task tidak ditemukan' });
 
-  // Superadmin/direksi atau creator task itu sendiri (req batch 4b)
-  const boleh = req.user.role === 'superadmin' || isDireksiRole(req.user) || isCreator(req.user, task);
+  // Top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) atau creator task itu sendiri (req batch 4b)
+  const boleh = isDireksiRole(req.user) || isCreator(req.user, task);
   if (!boleh)
     return res.status(403).json({ message: 'Hanya pembuat task atau admin yang dapat menghapus task' });
 

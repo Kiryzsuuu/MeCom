@@ -9,8 +9,8 @@ router.get('/', auth, async (req, res) => {
   res.json(list);
 });
 
-// POST /api/direktorat — Direksi saja
-router.post('/', auth, requireRole('direksi'), async (req, res) => {
+// POST /api/direktorat — top-tier saja
+router.post('/', auth, requireRole('sekretaris_coe'), async (req, res) => {
   const { nama, kode } = req.body;
   if (!nama || !kode) return res.status(400).json({ message: 'Nama dan kode wajib diisi' });
   const d = await Direktorat.create({ nama, kode });
@@ -18,7 +18,7 @@ router.post('/', auth, requireRole('direksi'), async (req, res) => {
 });
 
 // PUT /api/direktorat/:id
-router.put('/:id', auth, requireRole('direksi'), async (req, res) => {
+router.put('/:id', auth, requireRole('sekretaris_coe'), async (req, res) => {
   const d = await Direktorat.findByIdAndUpdate(req.params.id, req.body, { new: true });
   if (!d) return res.status(404).json({ message: 'Direktorat tidak ditemukan' });
   res.json(d);

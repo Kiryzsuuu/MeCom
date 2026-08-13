@@ -38,7 +38,7 @@ router.get('/', async (req, res) => {
   res.json(s);
 });
 
-// PUT /api/site-settings — superadmin
+// PUT /api/site-settings — top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE)
 router.put('/', auth, requireSuperadmin, async (req, res) => {
   const {
     appName, accentColor,
@@ -86,7 +86,7 @@ router.post('/smtp-test', auth, requireSuperadmin, async (req, res) => {
   }
 });
 
-// GET /api/site-settings/smtp-debug — superadmin only, cek config aktif
+// GET /api/site-settings/smtp-debug — top-tier only, cek config aktif
 router.get('/smtp-debug', auth, requireSuperadmin, async (req, res) => {
   const s = await getSettings();
   res.json({

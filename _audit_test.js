@@ -6,10 +6,10 @@ const jwt=require('jsonwebtoken');
 (async()=>{
   await mongoose.connect(process.env.MONGODB_URI);
   const User=require('./server/models/User');
-  const sa=await User.findOne({role:'superadmin',statusAktif:true});
-  if(!sa){console.log('no superadmin');process.exit(0);}
+  const sa=await User.findOne({role:'direktur_coe',statusAktif:true});
+  if(!sa){console.log('no direktur_coe');process.exit(0);}
   const tok=jwt.sign({id:sa._id},process.env.JWT_SECRET,{expiresIn:'1h'});
-  console.log('SUPERADMIN', sa.namaLengkap, '| enik:', sa.enik, '| email:', sa.email);
+  console.log('DIREKTUR_COE', sa.namaLengkap, '| enik:', sa.enik, '| email:', sa.email);
   const base='http://localhost:5001';
   const H={Authorization:'Bearer '+tok,'Content-Type':'application/json'};
   async function j(method,path,body){

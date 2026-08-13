@@ -87,7 +87,7 @@ router.post('/:id/apply', auth, async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
   const tpl = await Template.findById(req.params.id);
   if (!tpl) return res.status(404).json({ message: 'Template tidak ditemukan' });
-  if (tpl.createdBy.toString() !== req.user._id.toString() && req.user.role !== 'superadmin')
+  if (tpl.createdBy.toString() !== req.user._id.toString() && req.user.role !== 'direktur_coe')
     return res.status(403).json({ message: 'Tidak diizinkan' });
 
   await tpl.deleteOne();

@@ -318,10 +318,10 @@ function renderValidatorChips() {
 function renderValidatorDropdown(q = '') {
   const dd = document.getElementById('validator-dropdown');
   if (!dd) return;
-  const directors = allUsers.filter(u => ['direksi','komisaris'].includes(u.role) && !selectedValidators.has(u._id) && (!q || u.namaLengkap.toLowerCase().includes(q)));
+  const directors = allUsers.filter(u => ['sekretaris_coe','wakil_direktur_coe'].includes(u.role) && !selectedValidators.has(u._id) && (!q || u.namaLengkap.toLowerCase().includes(q)));
   dd.innerHTML = directors.length
     ? directors.map(u => `<div class="assignee-drop-item" onclick="toggleValidator('${u._id}')"><span>${u.namaLengkap}</span><span style="font-size:11px;color:var(--text-3);margin-left:auto">${u.role}</span></div>`).join('')
-    : `<div class="assignee-drop-empty">${q ? 'Tidak ada hasil' : 'Semua direktur/komisaris sudah dipilih'}</div>`;
+    : `<div class="assignee-drop-empty">${q ? 'Tidak ada hasil' : 'Semua Direktur CoE/Wakil Direktur CoE/Sekretaris CoE sudah dipilih'}</div>`;
   dd.classList.add('open');
 }
 function renderValidatorGrid() { renderValidatorChips(); }
@@ -395,7 +395,7 @@ function nameOf(id) { const u = allUsers.find(x => x._id === id); return u ? u.n
 
 function renderSubtaskTree() {
   const root = document.getElementById('subtask-tree');
-  const directors = allUsers.filter(u => ['direksi','komisaris'].includes(u.role));
+  const directors = allUsers.filter(u => ['sekretaris_coe','wakil_direktur_coe'].includes(u.role));
   function detailPanel(s) {
     if (assignOpenId !== sid(s)) return '';
     const id = sid(s);
@@ -609,7 +609,7 @@ async function initForm() {
 
     // creators/validators hanya boleh diatur creator utama
     const mainCreatorId = task.dibuatOleh?._id || task.dibuatOleh;
-    if (mainCreatorId !== user._id && user.role !== 'superadmin') {
+    if (mainCreatorId !== user._id && !['direktur_coe','wakil_direktur_coe','sekretaris_coe'].includes(user.role)) {
       document.getElementById('creator-card').style.display = 'none';
       document.getElementById('validator-card').style.display = 'none';
     }

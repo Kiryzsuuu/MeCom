@@ -4,8 +4,8 @@ const mongoose=require('mongoose'),jwt=require('jsonwebtoken');
 (async()=>{
   await mongoose.connect(process.env.MONGODB_URI);
   const User=require('./server/models/User');
-  const sa=await User.findOne({role:'superadmin',statusAktif:true});
-  const mgr=await User.findOne({role:{$in:['manager','staff','direksi']},statusAktif:true});
+  const sa=await User.findOne({role:'direktur_coe',statusAktif:true});
+  const mgr=await User.findOne({role:{$in:['dosen','sekretaris_coe']},statusAktif:true});
   const tok=jwt.sign({id:sa._id},process.env.JWT_SECRET,{expiresIn:'1h'});
   const tokM=mgr?jwt.sign({id:mgr._id},process.env.JWT_SECRET,{expiresIn:'1h'}):null;
   const base='http://localhost:5001';

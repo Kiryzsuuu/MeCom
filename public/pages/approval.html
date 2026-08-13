@@ -52,7 +52,7 @@
 <script>
 if (!requireAuth()) throw 'redirect';
 const user = getUser();
-if (!['direksi','komisaris','superadmin'].includes(user?.role)) window.location.href = '/pages/dashboard.html';
+if (!['sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user?.role)) window.location.href = '/pages/dashboard.html';
 
 async function load() {
   const el = document.getElementById('ap-list');

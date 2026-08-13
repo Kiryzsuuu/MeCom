@@ -3,6 +3,7 @@ const Channel        = require('../models/Channel');
 const ChannelMessage = require('../models/ChannelMessage');
 const User           = require('../models/User');
 const auth           = require('../middleware/auth');
+const { TOP_TIER_ROLES } = require('../middleware/roles');
 const { getIO }      = require('../socket');
 
 // GET /api/channels — list channel yang bisa diakses user
@@ -51,7 +52,7 @@ router.get('/:id', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   const ch = await Channel.findById(req.params.id);
   if (!ch) return res.status(404).json({ message: 'Channel tidak ditemukan' });
-  if (ch.createdBy.toString() !== req.user._id.toString() && req.user.role !== 'superadmin')
+  if (ch.createdBy.toString() !== req.user._id.toString() && req.user.role !== 'direktur_coe')
     return res.status(403).json({ message: 'Hanya pembuat yang dapat mengedit channel' });
 
   if (req.body.nama        !== undefined) ch.nama      = req.body.nama;
@@ -61,11 +62,11 @@ router.put('/:id', auth, async (req, res) => {
   res.json(ch);
 });
 
-// DELETE /api/channels/:id — hapus channel (creator atau superadmin)
+// DELETE /api/channels/:id — hapus channel (creator atau top-tier)
 router.delete('/:id', auth, async (req, res) => {
   const ch = await Channel.findById(req.params.id);
   if (!ch) return res.status(404).json({ message: 'Channel tidak ditemukan' });
-  if (ch.createdBy.toString() !== req.user._id.toString() && req.user.role !== 'superadmin')
+  if (ch.createdBy.toString() !== req.user._id.toString() && !TOP_TIER_ROLES.includes(req.user.role))
     return res.status(403).json({ message: 'Hanya pembuat yang dapat menghapus channel' });
 
   await ChannelMessage.deleteMany({ channelId: ch._id });
@@ -186,7 +187,7 @@ router.delete('/:id/messages/:msgId', auth, async (req, res) => {
   if (!msg) return res.status(404).json({ message: 'Pesan tidak ditemukan' });
 
   const isOwner     = msg.userId.toString() === req.user._id.toString();
-  const isSuperadmin = req.user.role === 'superadmin';
+  const isSuperadmin = TOP_TIER_ROLES.includes(req.user.role);
   const ch = await Channel.findById(req.params.id);
   const isCreator   = ch && ch.createdBy.toString() === req.user._id.toString();
 

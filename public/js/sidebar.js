@@ -3,9 +3,11 @@
 function buildSidebar(user, activePage) {
   if (!user) return '';
 
-  const isSuperadmin = user.role === 'superadmin';
-  const isDireksi    = user.role === 'direksi';
-  const isKomisaris  = user.role === 'komisaris';
+  // direktur_coe, wakil_direktur_coe, dan sekretaris_coe adalah level top-tier/admin yang setara
+  const isSuperadmin = user.role === 'direktur_coe';
+  const isDireksi    = user.role === 'sekretaris_coe';
+  const isKomisaris  = user.role === 'wakil_direktur_coe';
+  const isTopTier    = isSuperadmin || isDireksi || isKomisaris;
   const inits     = (user.namaLengkap || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   const avColors  = ['#5B4FE8','#16A34A','#EA580C','#0D9488','#DB2777'];
   const avColor   = avColors[inits.charCodeAt(0) % avColors.length];
@@ -18,7 +20,7 @@ function buildSidebar(user, activePage) {
     { id: 'dashboard',  href: '/pages/dashboard.html', icon: 'ti-layout-dashboard', label: 'Dashboard',  section: 'tasks' },
     { id: 'my-tasks',   href: '/pages/my-tasks.html',  icon: 'ti-checkbox',         label: 'My Tasks',   section: 'tasks' },
     { id: 'tasks',      href: '/pages/list.html',       icon: 'ti-clipboard-list',   label: 'Task List',  section: 'tasks', activeIds: taskListIds },
-    ...(isDireksi || isKomisaris || isSuperadmin ? [
+    ...(isTopTier ? [
       { id: 'approval', href: '/pages/approval.html', icon: 'ti-checks', label: 'Task Approval', section: 'tasks' },
     ] : []),
     { id: 'inbox',      href: '/pages/inbox.html',      icon: 'ti-bell',             label: 'Notifikasi', section: 'tasks', badge: true },
@@ -26,11 +28,9 @@ function buildSidebar(user, activePage) {
     { id: 'kpi',        href: '/pages/stats.html',      icon: 'ti-chart-bar',        label: 'KPI',        section: 'workspace' },
     { id: 'milestones', href: '/pages/milestones.html', icon: 'ti-flag',             label: 'Milestones', section: 'workspace' },
     { id: 'workload',   href: '/pages/workload.html',   icon: 'ti-users-group',      label: 'Workload',   section: 'workspace' },
-    ...(isDireksi || isSuperadmin ? [
+    ...(isTopTier ? [
       { id: 'users',  href: '/pages/settings.html', icon: 'ti-users',        label: 'Manajemen User', section: 'admin' },
       { id: 'audit',  href: '/pages/audit.html',    icon: 'ti-shield-check', label: 'Audit Trail',    section: 'admin' },
-    ] : []),
-    ...(isSuperadmin ? [
       { id: 'admin-tasks',   href: '/pages/admin-tasks.html',   icon: 'ti-subtask',  label: 'Manajemen Task', section: 'admin' },
       { id: 'site-settings', href: '/pages/site-settings.html', icon: 'ti-settings', label: 'Site Settings', section: 'admin' },
       { id: 'disaster',      href: '/pages/disaster.html',      icon: 'ti-alert-triangle', label: 'Disaster Settings', section: 'admin' },
@@ -63,7 +63,7 @@ function buildSidebar(user, activePage) {
     ? `<img src="${user.fotoProfil}" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover">`
     : `<div class="sb-av" style="background:${avColor}">${inits}</div>`;
 
-  const roleLabel = isSuperadmin ? 'Superadmin' : isDireksi ? 'Direksi' : isKomisaris ? 'Komisaris' : (user.direktoratId?.nama || 'Manager');
+  const roleLabel = isSuperadmin ? 'Direktur CoE' : isDireksi ? 'Sekretaris CoE' : isKomisaris ? 'Wakil Direktur CoE' : (user.direktoratId?.nama || 'Dosen');
 
   return `
     <div class="sb-logo">
@@ -203,7 +203,7 @@ async function initSidebar(activePage) {
   // Banner impersonasi
   if (Auth.isImpersonating()) {
     const by = JSON.parse(localStorage.getItem('wt_impersonated_by') || '{}');
-    injectImpersonateBanner(user.namaLengkap, by.nama || 'Superadmin');
+    injectImpersonateBanner(user.namaLengkap, by.nama || 'Direktur CoE');
   }
 
   // Sinkron data user dari server (mis. role baru diubah admin) tanpa perlu login ulang.

@@ -13,12 +13,12 @@ const siteSettingsSchema = new mongoose.Schema({
   // Login page — left panel
   heroLine1:    { type: String, default: 'Kelola task.' },
   heroLine2:    { type: String, default: 'Pantau KPI tim.' },
-  heroSub:      { type: String, default: 'MeCom AILO membantu Direksi dan Manager merencanakan, melacak, dan menyelesaikan pekerjaan dengan sistem approval dan KPI otomatis.' },
+  heroSub:      { type: String, default: 'MeCom AILO membantu Sekretaris CoE dan Dosen merencanakan, melacak, dan menyelesaikan pekerjaan dengan sistem approval dan KPI otomatis.' },
   loginFeatures: {
     type: [featureSchema],
     default: [
       { icon: 'ti-layout-kanban', text: 'Kanban board & list view untuk monitoring task' },
-      { icon: 'ti-chart-bar',     text: 'Perhitungan KPI otomatis per Manager' },
+      { icon: 'ti-chart-bar',     text: 'Perhitungan KPI otomatis per Dosen' },
       { icon: 'ti-bell',          text: 'Notifikasi realtime & pengingat deadline' },
     ],
   },

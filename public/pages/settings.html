@@ -200,11 +200,10 @@
     <div class="field">
       <label>Peran <span style="color:var(--red)">*</span></label>
       <select id="m-role" onchange="toggleDirField()">
-        <option value="superadmin" id="m-role-superadmin" style="display:none">Superadmin</option>
-        <option value="komisaris">Komisaris</option>
-        <option value="direksi">Direksi</option>
-        <option value="manager">Manager</option>
-        <option value="staff">Staff</option>
+        <option value="direktur_coe" id="m-role-superadmin" style="display:none">Direktur CoE</option>
+        <option value="wakil_direktur_coe">Wakil Direktur CoE</option>
+        <option value="sekretaris_coe">Sekretaris CoE</option>
+        <option value="dosen">Dosen</option>
       </select>
     </div>
     <div class="field" id="m-dir-field">
@@ -242,7 +241,7 @@
       </div>
       <div class="imp-notice">
         <i class="ti ti-alert-triangle"></i>
-        <span>Semua aksi yang Anda lakukan akan tercatat atas nama user ini. Gunakan tombol <strong>"Keluar dari Mode Penyamaran"</strong> di bagian bawah layar untuk kembali ke akun Superadmin.</span>
+        <span>Semua aksi yang Anda lakukan akan tercatat atas nama user ini. Gunakan tombol <strong>"Keluar dari Mode Penyamaran"</strong> di bagian bawah layar untuk kembali ke akun Direktur CoE.</span>
       </div>
     </div>
     <div class="imp-modal-footer">
@@ -264,8 +263,8 @@
 <script>
 if (!requireAuth()) throw 'redirect';
 const user = getUser();
-if (user.role !== 'direksi' && user.role !== 'superadmin') { window.location.href = '/pages/dashboard.html'; throw 'no access'; }
-const isSuperadmin = user.role === 'superadmin';
+if (!['sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user.role)) { window.location.href = '/pages/dashboard.html'; throw 'no access'; }
+const isSuperadmin = user.role === 'direktur_coe';
 
 let allUsers = [], dirs = [], editId = null;
 
@@ -326,7 +325,7 @@ function renderTable(users) {
             ${u.statusAktif?'Nonaktifkan':'Aktifkan'}
           </button>
           <button class="btn" style="font-size:12px" title="Reset Password" onclick="resetPassword('${u._id}','${u.namaLengkap}')"><i class="ti ti-key"></i></button>
-          ${isSuperadmin && u.role !== 'superadmin' ? `<button class="btn" style="font-size:12px;background:var(--accent-dim);color:var(--accent);border-color:transparent" title="Masuk sebagai pengguna ini" onclick="masukSebagai('${u._id}','${u.namaLengkap}','${u.role}')"><i class="ti ti-user-check"></i></button>` : ''}
+          ${isSuperadmin && u.role !== 'direktur_coe' ? `<button class="btn" style="font-size:12px;background:var(--accent-dim);color:var(--accent);border-color:transparent" title="Masuk sebagai pengguna ini" onclick="masukSebagai('${u._id}','${u.namaLengkap}','${u.role}')"><i class="ti ti-user-check"></i></button>` : ''}
         </div>
       </td>
     </tr>`).join('');
@@ -339,18 +338,18 @@ function filterTable() {
 
 function toggleDirField() {
   const role = document.getElementById('m-role').value;
-  // Komisaris dan Direksi tidak perlu direktorat (level atas), manager & staff perlu
-  document.getElementById('m-dir-field').style.display = ['superadmin','komisaris','direksi'].includes(role) ? 'none' : '';
+  // Direktur CoE, Wakil Direktur CoE, dan Sekretaris CoE tidak perlu direktorat (level atas), dosen perlu
+  document.getElementById('m-dir-field').style.display = ['direktur_coe','wakil_direktur_coe','sekretaris_coe'].includes(role) ? 'none' : '';
 }
 
 function roleLabel(role) {
-  const map = { superadmin:'Superadmin', komisaris:'Komisaris', direksi:'Direksi', manager:'Manager', staff:'Staff' };
+  const map = { direktur_coe:'Direktur CoE', wakil_direktur_coe:'Wakil Direktur CoE', sekretaris_coe:'Sekretaris CoE', dosen:'Dosen' };
   return map[role] || role;
 }
 
 function openModal(id) {
   editId = id || null;
-  // Opsi Superadmin hanya tersedia bagi superadmin yang sedang login
+  // Opsi Direktur CoE hanya tersedia bagi Direktur CoE yang sedang login
   document.getElementById('m-role-superadmin').style.display = isSuperadmin ? '' : 'none';
   document.getElementById('modal-title').textContent = id ? 'Edit Pengguna' : 'Tambah Pengguna';
   document.getElementById('m-password-wrap').style.display = id ? 'none' : '';
@@ -368,7 +367,7 @@ function openModal(id) {
     }
   } else {
     ['m-nama','m-email','m-password','m-wa'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('m-role').value = 'manager';
+    document.getElementById('m-role').value = 'dosen';
     document.getElementById('m-direktorat').value = '';
     toggleDirField();
   }
@@ -390,11 +389,11 @@ async function saveUser() {
 
   if (!nama || !email || !role) { showToast('Nama, email, dan peran wajib diisi', 'error'); return; }
   if (!editId && !pass)         { showToast('Password wajib diisi', 'error'); return; }
-  if (role === 'manager' && !dirId) { showToast('Direktorat wajib dipilih untuk Manager', 'error'); return; }
+  if (role === 'dosen' && !dirId) { showToast('Direktorat wajib dipilih untuk Dosen', 'error'); return; }
 
   const payload = { namaLengkap: nama, email, role };
   if (!editId) payload.password = pass;
-  if (role === 'manager') payload.direktoratId = dirId;
+  if (role === 'dosen') payload.direktoratId = dirId;
   if (nomorWa) payload.nomorWa = nomorWa;
 
   try {
@@ -435,7 +434,7 @@ let impersonateTarget = null;
 
 function masukSebagai(userId, nama, role) {
   impersonateTarget = { userId, nama, role };
-  const roleMap = { direksi:'Direksi', manager:'Manager', staff:'Staff', komisaris:'Komisaris' };
+  const roleMap = { sekretaris_coe:'Sekretaris CoE', dosen:'Dosen', wakil_direktur_coe:'Wakil Direktur CoE' };
   const inits = nama.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('imp-avatar-inits').textContent = inits;
   document.getElementById('imp-target-name').textContent  = nama;

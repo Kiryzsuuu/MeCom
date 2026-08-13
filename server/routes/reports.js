@@ -8,13 +8,13 @@ const { requireRole } = require('../middleware/roles');
 const { hitungKpiManager, hitungGrade, labelGrade } = require('../services/kpi');
 
 // GET /api/reports/kpi/pdf
-router.get('/kpi/pdf', auth, requireRole('direksi'), async (req, res) => {
+router.get('/kpi/pdf', auth, requireRole('sekretaris_coe'), async (req, res) => {
   const now        = new Date();
   const bulan      = parseInt(req.query.bulan) || now.getMonth() + 1;
   const tahun      = parseInt(req.query.tahun) || now.getFullYear();
   const BULAN_NAMA = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
-  const managers = await User.find({ role: 'manager', statusAktif: true }).populate('direktoratId', 'nama');
+  const managers = await User.find({ role: 'dosen', statusAktif: true }).populate('direktoratId', 'nama');
   const rows = await Promise.all(managers.map(async m => ({
     nama:        m.namaLengkap,
     direktorat:  m.direktoratId?.nama || '-',
@@ -33,7 +33,7 @@ router.get('/kpi/pdf', auth, requireRole('direksi'), async (req, res) => {
 
   // Tabel
   const cols = [200, 120, 60, 60, 60, 60, 50];
-  const headers = ['Nama Manager', 'Direktorat', 'Tepat Waktu', 'Volume', 'Kualitas', 'Skor', 'Grade'];
+  const headers = ['Nama Dosen', 'Direktorat', 'Tepat Waktu', 'Volume', 'Kualitas', 'Skor', 'Grade'];
   let x = 40;
   doc.font('Helvetica-Bold').fontSize(9);
   headers.forEach((h, i) => { doc.text(h, x, doc.y, { width: cols[i], lineBreak: false }); x += cols[i]; });
@@ -60,12 +60,12 @@ router.get('/kpi/pdf', auth, requireRole('direksi'), async (req, res) => {
 });
 
 // GET /api/reports/kpi/excel
-router.get('/kpi/excel', auth, requireRole('direksi'), async (req, res) => {
+router.get('/kpi/excel', auth, requireRole('sekretaris_coe'), async (req, res) => {
   const now   = new Date();
   const bulan = parseInt(req.query.bulan) || now.getMonth() + 1;
   const tahun = parseInt(req.query.tahun) || now.getFullYear();
 
-  const managers = await User.find({ role: 'manager', statusAktif: true }).populate('direktoratId', 'nama');
+  const managers = await User.find({ role: 'dosen', statusAktif: true }).populate('direktoratId', 'nama');
   const rows = await Promise.all(managers.map(async m => ({
     nama:       m.namaLengkap,
     email:      m.email,
@@ -77,7 +77,7 @@ router.get('/kpi/excel', auth, requireRole('direksi'), async (req, res) => {
   const ws = wb.addWorksheet('KPI');
 
   ws.columns = [
-    { header: 'Nama Manager',   key: 'nama',       width: 25 },
+    { header: 'Nama Dosen',   key: 'nama',       width: 25 },
     { header: 'Email',          key: 'email',      width: 28 },
     { header: 'Direktorat',     key: 'direktorat', width: 22 },
     { header: 'Tepat Waktu (%)',key: 'waktu',      width: 15 },
@@ -116,7 +116,7 @@ router.get('/kpi/excel', auth, requireRole('direksi'), async (req, res) => {
 // GET /api/reports/tasks/excel — Export task per direktorat
 router.get('/tasks/excel', auth, async (req, res) => {
   const filter = { isDeleted: false };
-  if (req.user.role === 'manager') {
+  if (req.user.role === 'dosen') {
     filter.direktoratId = req.user.direktoratId?._id || req.user.direktoratId;
   } else if (req.query.direktoratId) {
     filter.direktoratId = req.query.direktoratId;
@@ -159,9 +159,9 @@ router.get('/tasks/excel', auth, async (req, res) => {
 router.get('/workload', auth, async (req, res) => {
   const ACTIVE_STATUS = ['to_do','on_progress','partially_complete'];
 
-  // Hanya direksi/superadmin bisa lihat semua; manager hanya direktoratnya
-  const userFilter = { statusAktif: true, role: { $in: ['manager','staff'] } };
-  if (req.user.role === 'manager' || req.user.role === 'staff') {
+  // Hanya top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) bisa lihat semua; dosen hanya direktoratnya
+  const userFilter = { statusAktif: true, role: 'dosen' };
+  if (req.user.role === 'dosen') {
     const userDirId = req.user.direktoratId?._id || req.user.direktoratId;
     userFilter.direktoratId = userDirId;
   }

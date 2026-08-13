@@ -77,7 +77,7 @@
 <script>
 if (!requireAuth()) throw 'redirect';
 const user = getUser();
-if (!['direksi','superadmin'].includes(user.role)) { window.location.href='/pages/dashboard.html'; throw 'no access'; }
+if (!['sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user.role)) { window.location.href='/pages/dashboard.html'; throw 'no access'; }
 
 let currentPage = 1;
 const PAGE_SIZE = 50;

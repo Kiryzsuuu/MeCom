@@ -2,7 +2,7 @@ const router    = require('express').Router();
 const Milestone = require('../models/Milestone');
 const Task      = require('../models/Task');
 const auth      = require('../middleware/auth');
-const { requireRole } = require('../middleware/roles');
+const { requireRole, TOP_TIER_ROLES } = require('../middleware/roles');
 
 // GET /api/milestones
 router.get('/', auth, async (req, res) => {
@@ -11,8 +11,8 @@ router.get('/', auth, async (req, res) => {
   if (direktoratId) filter.direktoratId = direktoratId;
   if (status) filter.status = status;
 
-  // manager/staff hanya lihat direktorat sendiri (jika tidak filter)
-  if ((req.user.role === 'manager' || req.user.role === 'staff') && !direktoratId) {
+  // dosen hanya lihat direktorat sendiri (jika tidak filter)
+  if (req.user.role === 'dosen' && !direktoratId) {
     filter.$or = [
       { direktoratId: req.user.direktoratId?._id || req.user.direktoratId },
       { direktoratId: null },
@@ -116,7 +116,7 @@ router.delete('/:id', auth, async (req, res) => {
   const ms = await Milestone.findById(req.params.id);
   if (!ms) return res.status(404).json({ message: 'Milestone tidak ditemukan' });
 
-  if (ms.createdBy.toString() !== req.user._id.toString() && req.user.role !== 'superadmin' && req.user.role !== 'direksi')
+  if (ms.createdBy.toString() !== req.user._id.toString() && !TOP_TIER_ROLES.includes(req.user.role))
     return res.status(403).json({ message: 'Tidak diizinkan' });
 
   await ms.deleteOne();

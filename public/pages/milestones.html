@@ -226,7 +226,7 @@ function renderTimeline(milestones) {
     const badgeFg = ms.status === 'tercapai' ? '#065F46' : (isOver ? '#991B1B' : '#1E40AF');
     const badgeTxt= ms.status === 'tercapai' ? '✓ Tercapai' : (isOver ? '⚠ Overdue' : '○ Pending');
 
-    const canEdit = curUser?.role === 'superadmin' || curUser?.role === 'direksi' ||
+    const canEdit = ['direktur_coe', 'wakil_direktur_coe', 'sekretaris_coe'].includes(curUser?.role) ||
                     ms.createdBy?._id === curUser?._id;
 
     // Progress dari task

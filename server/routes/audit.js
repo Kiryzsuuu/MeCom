@@ -3,8 +3,8 @@ const AuditLog = require('../models/AuditLog');
 const auth     = require('../middleware/auth');
 const { requireRole } = require('../middleware/roles');
 
-// GET /api/audit — hanya direksi/superadmin
-router.get('/', auth, requireRole('direksi'), async (req, res) => {
+// GET /api/audit — hanya top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE)
+router.get('/', auth, requireRole('sekretaris_coe'), async (req, res) => {
   const { userId, aksi, page = 1, limit = 50 } = req.query;
   const filter = {};
   if (userId) filter.userId = userId;

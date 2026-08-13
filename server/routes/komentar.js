@@ -5,6 +5,7 @@ const User     = require('../models/User');
 const auth     = require('../middleware/auth');
 const notifSvc = require('../services/notifikasi');
 const push     = require('../services/push');
+const { TOP_TIER_ROLES } = require('../middleware/roles');
 
 // GET /api/komentar?taskId=xxx
 router.get('/', auth, async (req, res) => {
@@ -25,12 +26,12 @@ router.post('/', auth, async (req, res) => {
   if (!task || task.isDeleted)
     return res.status(404).json({ message: 'Task tidak ditemukan' });
 
-  // Cek akses: Direksi, creator, atau assignee
-  const isDireksi  = ['direksi', 'superadmin'].includes(req.user.role);
+  // Cek akses: top-tier, creator, atau assignee
+  const isDireksi  = TOP_TIER_ROLES.includes(req.user.role);
   const isCreator  = (task.dibuatOleh._id?.toString() || task.dibuatOleh.toString()) === req.user._id.toString();
   const isAssignee = (task.assignees || []).map(c => c.toString()).includes(req.user._id.toString());
   if (!isDireksi && !isCreator && !isAssignee)
-    return res.status(403).json({ message: 'Hanya Direksi, pembuat, atau assignee yang dapat menambah notes' });
+    return res.status(403).json({ message: 'Hanya top-tier, pembuat, atau assignee yang dapat menambah notes' });
 
   // Parse mentions @[nama] → cari user id
   const mentionMatches = [...isi.matchAll(/@\[([^\]]+)\]/g)];
@@ -85,7 +86,7 @@ router.delete('/:id', auth, async (req, res) => {
   if (!kom) return res.status(404).json({ message: 'Komentar tidak ditemukan' });
 
   const isOwner   = kom.userId.toString() === req.user._id.toString();
-  const isDireksi = req.user.role === 'direksi';
+  const isDireksi = TOP_TIER_ROLES.includes(req.user.role);
 
   const batas = 30 * 60 * 1000;
   if (!isDireksi && (!isOwner || Date.now() - kom.createdAt.getTime() > batas))

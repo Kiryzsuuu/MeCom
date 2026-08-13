@@ -4,12 +4,13 @@ const Evidence = require('../models/Evidence');
 const Task     = require('../models/Task');
 const auth     = require('../middleware/auth');
 const { upload } = require('../middleware/upload');
+const { TOP_TIER_ROLES } = require('../middleware/roles');
 
 // Req #3: semua user bisa melihat task & evidence
 function canAccessEvidence() { return true; }
 
 function canEditEvidence(user, task) {
-  if (['direksi', 'superadmin'].includes(user.role)) return true;
+  if (TOP_TIER_ROLES.includes(user.role)) return true;
   if ((task.dibuatOleh?.toString() || '') === user._id.toString()) return true;
   return (task.assignees || []).map(c => c.toString()).includes(user._id.toString());
 }
@@ -76,8 +77,8 @@ router.delete('/:id', auth, async (req, res) => {
   const task = await Task.findById(ev.taskId);
 
   if (task.status === 'complete') {
-    if (req.user.role !== 'direksi')
-      return res.status(403).json({ message: 'File task selesai hanya dapat dihapus oleh Direksi' });
+    if (!TOP_TIER_ROLES.includes(req.user.role))
+      return res.status(403).json({ message: 'File task selesai hanya dapat dihapus oleh Direktur CoE/Wakil Direktur CoE/Sekretaris CoE' });
   } else {
     if (!canEditEvidence(req.user, task))
       return res.status(403).json({ message: 'Hanya assignee atau pembuat yang dapat menghapus file' });

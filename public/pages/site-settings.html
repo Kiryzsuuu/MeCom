@@ -133,7 +133,7 @@
                 </div>
                 <div class="lp-hero">
                   <div class="lp-title" id="lp-title">Kelola task.<br><span id="lp-title-accent" style="color:var(--accent)">Pantau KPI tim.</span></div>
-                  <div class="lp-sub" id="lp-sub">MeCom AILO membantu Direksi dan Manager merencanakan, melacak, dan menyelesaikan pekerjaan.</div>
+                  <div class="lp-sub" id="lp-sub">MeCom AILO membantu Sekretaris CoE dan Dosen merencanakan, melacak, dan menyelesaikan pekerjaan.</div>
                 </div>
                 <div class="lp-features" id="lp-features"></div>
               </div>
@@ -258,7 +258,7 @@
 <script>
 if (!requireAuth()) throw 'redirect';
 const user = getUser();
-if (user.role !== 'superadmin') { window.location.href = '/pages/dashboard.html'; throw 'no access'; }
+if (!['direktur_coe','wakil_direktur_coe','sekretaris_coe'].includes(user.role)) { window.location.href = '/pages/dashboard.html'; throw 'no access'; }
 
 let features = [];
 
