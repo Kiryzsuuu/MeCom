@@ -5,7 +5,7 @@
   <link rel="icon" href="/img/logo.png">
   <link rel="manifest" href="/manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeCom AILO — Manajemen Pengguna</title>
+  <title>MeCom AILO Manajemen Pengguna</title>
   <link rel="icon" type="image/png" href="/img/logo.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="/styles/base.css">
@@ -86,7 +86,7 @@
     }
     .imp-modal-icon {
       width:48px;height:48px;border-radius:14px;
-      background:rgba(91,79,232,.2);display:flex;align-items:center;justify-content:center;
+      background:rgba(14,124,145,.2);display:flex;align-items:center;justify-content:center;
       margin-bottom:14px;position:relative;z-index:1;
     }
     .imp-modal-icon i { font-size:24px;color:#A5B4FC; }
@@ -125,7 +125,7 @@
       display:flex;align-items:center;justify-content:center;gap:8px;
       transition:background .15s;
     }
-    .imp-btn-go:hover { background:var(--accent-hover,#4A3FD4) }
+    .imp-btn-go:hover { background:var(--accent-hover,#0A6275) }
   </style>
 </head>
 <body>
@@ -200,6 +200,7 @@
     <div class="field">
       <label>Peran <span style="color:var(--red)">*</span></label>
       <select id="m-role" onchange="toggleDirField()">
+        <option value="super_admin" id="m-role-superadmin-acc" style="display:none">Super Admin</option>
         <option value="direktur_coe" id="m-role-superadmin" style="display:none">Direktur CoE</option>
         <option value="wakil_direktur_coe">Wakil Direktur CoE</option>
         <option value="sekretaris_coe">Sekretaris CoE</option>
@@ -263,8 +264,9 @@
 <script>
 if (!requireAuth()) throw 'redirect';
 const user = getUser();
-if (!['sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user.role)) { window.location.href = '/pages/dashboard.html'; throw 'no access'; }
-const isSuperadmin = user.role === 'direktur_coe';
+if (!['super_admin','sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user.role)) { window.location.href = '/pages/dashboard.html'; throw 'no access'; }
+const TOP_TIER_ROLES = ['super_admin','direktur_coe','wakil_direktur_coe','sekretaris_coe'];
+const isSuperadmin = TOP_TIER_ROLES.includes(user.role);
 
 let allUsers = [], dirs = [], editId = null;
 
@@ -325,7 +327,7 @@ function renderTable(users) {
             ${u.statusAktif?'Nonaktifkan':'Aktifkan'}
           </button>
           <button class="btn" style="font-size:12px" title="Reset Password" onclick="resetPassword('${u._id}','${u.namaLengkap}')"><i class="ti ti-key"></i></button>
-          ${isSuperadmin && u.role !== 'direktur_coe' ? `<button class="btn" style="font-size:12px;background:var(--accent-dim);color:var(--accent);border-color:transparent" title="Masuk sebagai pengguna ini" onclick="masukSebagai('${u._id}','${u.namaLengkap}','${u.role}')"><i class="ti ti-user-check"></i></button>` : ''}
+          ${isSuperadmin && !TOP_TIER_ROLES.includes(u.role) ? `<button class="btn" style="font-size:12px;background:var(--accent-dim);color:var(--accent);border-color:transparent" title="Masuk sebagai pengguna ini" onclick="masukSebagai('${u._id}','${u.namaLengkap}','${u.role}')"><i class="ti ti-user-check"></i></button>` : ''}
         </div>
       </td>
     </tr>`).join('');
@@ -338,18 +340,19 @@ function filterTable() {
 
 function toggleDirField() {
   const role = document.getElementById('m-role').value;
-  // Direktur CoE, Wakil Direktur CoE, dan Sekretaris CoE tidak perlu direktorat (level atas), dosen perlu
-  document.getElementById('m-dir-field').style.display = ['direktur_coe','wakil_direktur_coe','sekretaris_coe'].includes(role) ? 'none' : '';
+  // Super Admin, Direktur CoE, Wakil Direktur CoE, dan Sekretaris CoE tidak perlu direktorat (level atas), dosen perlu
+  document.getElementById('m-dir-field').style.display = TOP_TIER_ROLES.includes(role) ? 'none' : '';
 }
 
 function roleLabel(role) {
-  const map = { direktur_coe:'Direktur CoE', wakil_direktur_coe:'Wakil Direktur CoE', sekretaris_coe:'Sekretaris CoE', dosen:'Dosen' };
+  const map = { super_admin:'Super Admin', direktur_coe:'Direktur CoE', wakil_direktur_coe:'Wakil Direktur CoE', sekretaris_coe:'Sekretaris CoE', dosen:'Dosen' };
   return map[role] || role;
 }
 
 function openModal(id) {
   editId = id || null;
-  // Opsi Direktur CoE hanya tersedia bagi Direktur CoE yang sedang login
+  // Opsi Super Admin/Direktur CoE hanya tersedia bagi user top-tier yang sedang login
+  document.getElementById('m-role-superadmin-acc').style.display = isSuperadmin ? '' : 'none';
   document.getElementById('m-role-superadmin').style.display = isSuperadmin ? '' : 'none';
   document.getElementById('modal-title').textContent = id ? 'Edit Pengguna' : 'Tambah Pengguna';
   document.getElementById('m-password-wrap').style.display = id ? 'none' : '';

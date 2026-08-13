@@ -5,7 +5,7 @@
   <link rel="icon" href="/img/logo.png">
   <link rel="manifest" href="/manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeCom AILO — Channel</title>
+  <title>MeCom AILO Channel</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="/styles/base.css">
   <style>
@@ -495,7 +495,7 @@
     .lobby-preview video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
     #lobby-video-off { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
     .lobby-av {
-      width: 90px; height: 90px; border-radius: 50%; background: #5B4FE8;
+      width: 90px; height: 90px; border-radius: 50%; background: #0E7C91;
       display: flex; align-items: center; justify-content: center;
       color: #fff; font-size: 34px; font-weight: 800;
     }
@@ -1087,7 +1087,7 @@ function renderMessages(msgs) {
     const name = u.namaLengkap || 'Unknown';
     const time = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     const inits = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    const avColors = ['#5B4FE8','#16A34A','#EA580C','#0D9488','#DB2777'];
+    const avColors = ['#0E7C91','#16A34A','#EA580C','#0D9488','#DB2777'];
     const avColor  = avColors[inits.charCodeAt(0) % avColors.length];
     const avHtml   = u.fotoProfil
       ? `<img src="${u.fotoProfil}" alt="">`
@@ -1133,7 +1133,7 @@ async function sendMessage() {
     const name = u.namaLengkap || 'Unknown';
     const time = new Date(msg.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     const inits = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    const avColors = ['#5B4FE8','#16A34A','#EA580C','#0D9488','#DB2777'];
+    const avColors = ['#0E7C91','#16A34A','#EA580C','#0D9488','#DB2777'];
     const avColor  = avColors[inits.charCodeAt(0) % avColors.length];
     const avHtml   = u.fotoProfil ? `<img src="${u.fotoProfil}" alt="">` : `<span style="font-size:12px;font-weight:700;color:#fff">${inits}</span>`;
 
@@ -1371,7 +1371,7 @@ function getSocket() {
     const name = u.namaLengkap || 'Unknown';
     const time = new Date(msg.createdAt).toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
     const inits = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    const avColors = ['#5B4FE8','#16A34A','#EA580C','#0D9488','#DB2777'];
+    const avColors = ['#0E7C91','#16A34A','#EA580C','#0D9488','#DB2777'];
     const avColor  = avColors[inits.charCodeAt(0) % avColors.length];
     const avHtml   = u.fotoProfil
       ? `<img src="${u.fotoProfil}" alt="">`
@@ -2409,7 +2409,7 @@ function addMyVideoTile() {
   const grid = getCallGrid();
   if (!grid || document.getElementById('vtile-me')) return;
   const inits = (me.namaLengkap || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
-  const avColors = ['#5B4FE8','#16A34A','#EA580C','#0D9488','#DB2777'];
+  const avColors = ['#0E7C91','#16A34A','#EA580C','#0D9488','#DB2777'];
   const avColor  = avColors[inits.charCodeAt(0) % avColors.length];
   const avHtml   = me.fotoProfil ? `<img src="${me.fotoProfil}" alt="">` : inits;
   const tile = document.createElement('div');
@@ -2452,7 +2452,7 @@ function addRemoteVideoTile(socketId, userId, stream) {
   const p    = Object.values(voiceParticipants).find(x => x.socketId === socketId || x.userId === userId) || {};
   const name = p.name || 'User';
   const inits = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
-  const avColors = ['#5B4FE8','#16A34A','#EA580C','#0D9488','#DB2777'];
+  const avColors = ['#0E7C91','#16A34A','#EA580C','#0D9488','#DB2777'];
   const avColor  = avColors[inits.charCodeAt(0) % avColors.length];
 
   const tile = document.createElement('div');
@@ -2493,7 +2493,7 @@ function ensureParticipantTile(p) {
   const id = 'vtile-p-' + p.userId;
   if (document.getElementById(id)) return;
   const inits = (p.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-  const avColors = ['#5B4FE8','#16A34A','#EA580C','#0D9488','#DB2777'];
+  const avColors = ['#0E7C91','#16A34A','#EA580C','#0D9488','#DB2777'];
   const avColor  = avColors[inits.charCodeAt(0) % avColors.length];
   const avHtml   = p.photo ? `<img src="${p.photo}" alt="">` : inits;
   const tile = document.createElement('div');
@@ -2530,7 +2530,7 @@ function renderVoiceParticipants() {
     if (count) count.textContent = allParts.length + ' peserta';
     el.innerHTML = allParts.map(p => {
       const inits    = (p.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-      const avColors = ['#5B4FE8','#16A34A','#EA580C','#0D9488','#DB2777'];
+      const avColors = ['#0E7C91','#16A34A','#EA580C','#0D9488','#DB2777'];
       const avColor  = avColors[inits.charCodeAt(0) % avColors.length];
       const avHtml   = p.photo ? `<img src="${p.photo}" alt="">` : inits;
       return `<div class="voice-participant${p.muted ? ' muted' : ''}" data-uid="${p.userId}">
@@ -2549,7 +2549,7 @@ function renderVoiceParticipants() {
   if (lpEl) {
     lpEl.innerHTML = allParts.map(p => {
       const inits    = (p.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-      const avColors = ['#5B4FE8','#16A34A','#EA580C','#0D9488','#DB2777'];
+      const avColors = ['#0E7C91','#16A34A','#EA580C','#0D9488','#DB2777'];
       const avColor  = avColors[inits.charCodeAt(0) % avColors.length];
       const avHtml   = p.photo ? `<img src="${p.photo}" alt="">` : inits;
       return `<div class="ch-vp-row" data-uid="${p.userId}">

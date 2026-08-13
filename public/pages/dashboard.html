@@ -5,7 +5,7 @@
   <link rel="icon" href="/img/logo.png">
   <link rel="manifest" href="/manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeCom AILO — Dashboard</title>
+  <title>MeCom AILO Dashboard</title>
   <link rel="icon" type="image/png" href="/img/logo.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="/styles/base.css">
@@ -336,7 +336,7 @@ function buildStats() {
 }
 
 function buildMyTasks() {
-  const isAdmin = ['sekretaris_coe', 'direktur_coe', 'wakil_direktur_coe'].includes(user?.role);
+  const isAdmin = ['super_admin', 'sekretaris_coe', 'direktur_coe', 'wakil_direktur_coe'].includes(user?.role);
   const myTasksRaw = isAdmin
     ? _tasks.filter(t => t.status !== 'complete')
     : _tasks.filter(t => isMyTask(t, user?._id));

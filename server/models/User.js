@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
   enik:          { type: String, default: null, sparse: true },
   jabatan:       { type: String, default: null },
   passwordHash:  { type: String, required: true },
-  role:          { type: String, enum: ['direktur_coe', 'wakil_direktur_coe', 'sekretaris_coe', 'dosen'], required: true },
+  role:          { type: String, enum: ['super_admin', 'direktur_coe', 'wakil_direktur_coe', 'sekretaris_coe', 'dosen'], required: true },
   direktoratId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Direktorat', default: null },
   statusAktif:   { type: Boolean, default: true },
   fotoProfil:    { type: String, default: null },

@@ -8,7 +8,7 @@ const featureSchema = new mongoose.Schema({
 const siteSettingsSchema = new mongoose.Schema({
   appName:      { type: String, default: 'MeCom AILO' },
   appLogo:      { type: String, default: null },
-  accentColor:  { type: String, default: '#5B4FE8' },
+  accentColor:  { type: String, default: '#0E7C91' },
 
   // Login page — left panel
   heroLine1:    { type: String, default: 'Kelola task.' },

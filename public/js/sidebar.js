@@ -3,11 +3,12 @@
 function buildSidebar(user, activePage) {
   if (!user) return '';
 
-  // direktur_coe, wakil_direktur_coe, dan sekretaris_coe adalah level top-tier/admin yang setara
+  // super_admin, direktur_coe, wakil_direktur_coe, dan sekretaris_coe adalah level top-tier/admin yang setara
+  const isSuperAdminAccount = user.role === 'super_admin';
   const isSuperadmin = user.role === 'direktur_coe';
   const isDireksi    = user.role === 'sekretaris_coe';
   const isKomisaris  = user.role === 'wakil_direktur_coe';
-  const isTopTier    = isSuperadmin || isDireksi || isKomisaris;
+  const isTopTier    = isSuperAdminAccount || isSuperadmin || isDireksi || isKomisaris;
   const inits     = (user.namaLengkap || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   const avColors  = ['#5B4FE8','#16A34A','#EA580C','#0D9488','#DB2777'];
   const avColor   = avColors[inits.charCodeAt(0) % avColors.length];
@@ -63,7 +64,7 @@ function buildSidebar(user, activePage) {
     ? `<img src="${user.fotoProfil}" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover">`
     : `<div class="sb-av" style="background:${avColor}">${inits}</div>`;
 
-  const roleLabel = isSuperadmin ? 'Direktur CoE' : isDireksi ? 'Sekretaris CoE' : isKomisaris ? 'Wakil Direktur CoE' : (user.direktoratId?.nama || 'Dosen');
+  const roleLabel = isSuperAdminAccount ? 'Super Admin' : isSuperadmin ? 'Direktur CoE' : isDireksi ? 'Sekretaris CoE' : isKomisaris ? 'Wakil Direktur CoE' : (user.direktoratId?.nama || 'Dosen');
 
   return `
     <div class="sb-logo">

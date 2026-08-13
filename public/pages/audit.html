@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeCom AILO — Audit Trail</title>
+  <title>MeCom AILO Audit Trail</title>
   <link rel="icon" href="/img/logo.png">
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
@@ -77,7 +77,7 @@
 <script>
 if (!requireAuth()) throw 'redirect';
 const user = getUser();
-if (!['sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user.role)) { window.location.href='/pages/dashboard.html'; throw 'no access'; }
+if (!['super_admin','sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user.role)) { window.location.href='/pages/dashboard.html'; throw 'no access'; }
 
 let currentPage = 1;
 const PAGE_SIZE = 50;

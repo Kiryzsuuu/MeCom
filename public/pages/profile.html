@@ -5,7 +5,7 @@
   <link rel="icon" href="/img/logo.png">
   <link rel="manifest" href="/manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeCom AILO — Profil Saya</title>
+  <title>MeCom AILO Profil Saya</title>
   <link rel="icon" type="image/png" href="/img/logo.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="/styles/base.css">
@@ -254,7 +254,7 @@
 if (!requireAuth()) throw 'redirect';
 let currentUser = getUser();
 
-const ROLE_MAP = { direktur_coe:'Direktur CoE', wakil_direktur_coe:'Wakil Direktur CoE', sekretaris_coe:'Sekretaris CoE', dosen:'Dosen' };
+const ROLE_MAP = { super_admin:'Super Admin', direktur_coe:'Direktur CoE', wakil_direktur_coe:'Wakil Direktur CoE', sekretaris_coe:'Sekretaris CoE', dosen:'Dosen' };
 
 function renderProfile(u) {
   const el = document.getElementById('avatar-el');

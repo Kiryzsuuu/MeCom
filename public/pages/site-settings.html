@@ -5,7 +5,7 @@
   <link rel="icon" href="/img/logo.png">
   <link rel="manifest" href="/manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeCom AILO — Site Settings</title>
+  <title>MeCom AILO Site Settings</title>
   <link rel="icon" type="image/png" href="/img/logo.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="/styles/base.css">
@@ -65,7 +65,7 @@
     .lp-sub { font-size:11px; color:#71717A; line-height:1.6; }
     .lp-features { display:flex; flex-direction:column; gap:8px; position:relative; z-index:1; }
     .lp-feat { display:flex; align-items:center; gap:8px; }
-    .lp-feat-icon { width:24px; height:24px; border-radius:5px; background:rgba(91,79,232,.2); display:flex; align-items:center; justify-content:center; color:#A5B4FC; font-size:13px; flex-shrink:0; }
+    .lp-feat-icon { width:24px; height:24px; border-radius:5px; background:rgba(14,124,145,.2); display:flex; align-items:center; justify-content:center; color:#A5B4FC; font-size:13px; flex-shrink:0; }
     .lp-feat-text { font-size:11px; color:#A1A1AA; }
 
     @media(max-width:900px){ .row-2 { grid-template-columns:1fr } }
@@ -98,7 +98,7 @@
                 <label>Accent Color</label>
                 <div class="color-row">
                   <input type="color" id="s-color" class="color-swatch" oninput="syncColorHex()">
-                  <input type="text" id="s-color-hex" placeholder="#5B4FE8" style="width:110px" oninput="syncColorPicker()">
+                  <input type="text" id="s-color-hex" placeholder="#0E7C91" style="width:110px" oninput="syncColorPicker()">
                   <div style="font-size:12px;color:var(--text-3)">Warna tombol, link aktif, elemen UI</div>
                 </div>
               </div>
@@ -258,7 +258,7 @@
 <script>
 if (!requireAuth()) throw 'redirect';
 const user = getUser();
-if (!['direktur_coe','wakil_direktur_coe','sekretaris_coe'].includes(user.role)) { window.location.href = '/pages/dashboard.html'; throw 'no access'; }
+if (!['super_admin','direktur_coe','wakil_direktur_coe','sekretaris_coe'].includes(user.role)) { window.location.href = '/pages/dashboard.html'; throw 'no access'; }
 
 let features = [];
 
@@ -271,7 +271,7 @@ async function loadSettings() {
   document.getElementById('s-logintitle').value = s.loginTitle || 'Selamat datang';
   document.getElementById('s-loginsub').value   = s.loginSubtitle || 'Masuk ke akun MeCom AILO Anda';
 
-  const color = s.accentColor || '#5B4FE8';
+  const color = s.accentColor || '#0E7C91';
   document.getElementById('s-color').value     = color;
   document.getElementById('s-color-hex').value = color;
 

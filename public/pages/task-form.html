@@ -5,7 +5,7 @@
   <link rel="icon" href="/img/logo.png">
   <link rel="manifest" href="/manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeCom AILO — Form Task</title>
+  <title>MeCom AILO Form Task</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="/styles/base.css">
   <style>
@@ -609,7 +609,7 @@ async function initForm() {
 
     // creators/validators hanya boleh diatur creator utama
     const mainCreatorId = task.dibuatOleh?._id || task.dibuatOleh;
-    if (mainCreatorId !== user._id && !['direktur_coe','wakil_direktur_coe','sekretaris_coe'].includes(user.role)) {
+    if (mainCreatorId !== user._id && !['super_admin','direktur_coe','wakil_direktur_coe','sekretaris_coe'].includes(user.role)) {
       document.getElementById('creator-card').style.display = 'none';
       document.getElementById('validator-card').style.display = 'none';
     }

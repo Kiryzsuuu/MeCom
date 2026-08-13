@@ -4,22 +4,15 @@
   <meta charset="UTF-8">
   <link rel="manifest" href="/manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeCom AILO — Login</title>
+  <title>MeCom AILO Login</title>
   <link rel="icon" type="image/png" href="/img/logo.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <style>
     :root {
-      --accent:#5B4FE8;--accent-hover:#4A3FD4;--accent-dim:rgba(91,79,232,.12);
-      --bg:#F2F2F5;--surface:#FFFFFF;--surface-2:#F7F7F9;
-      --border:rgba(0,0,0,.07);--text:#18181B;--text-2:#52525B;--text-3:#A1A1AA;
+      --accent:#0E7C91;--accent-hover:#0A6275;--accent-dim:rgba(14,124,145,.12);
+      --bg:#FAF9F6;--surface:#FFFFFF;--surface-2:#F3F1EC;
+      --border:rgba(24,24,27,.08);--text:#18181B;--text-2:#52525B;--text-3:#A1A1AA;
       --red:#DC2626;--red-bg:#FEF2F2;
-    }
-    @media(prefers-color-scheme:dark){
-      :root{
-        --bg:#0C0C0E;--surface:#18181B;--surface-2:#27272A;
-        --border:rgba(255,255,255,.07);--text:#FAFAFA;--text-2:#A1A1AA;--text-3:#52525B;
-        --red-bg:#450a0a;
-      }
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     body{
@@ -31,7 +24,7 @@
 
     /* Left panel */
     .split-left{
-      flex:1;background:#18181B;
+      flex:1;background:#F3F1EC;
       display:flex;flex-direction:column;justify-content:space-between;
       padding:48px;position:relative;overflow:hidden;
     }
@@ -45,31 +38,31 @@
     }
     .brand{display:flex;align-items:center;gap:12px;position:relative;z-index:1}
     .brand-mark{
-      width:38px;height:38px;border-radius:10px;
-      display:flex;align-items:center;justify-content:center;
+      height:44px;max-width:220px;border-radius:10px;
+      display:flex;align-items:center;justify-content:flex-start;
       overflow:hidden;flex-shrink:0;
     }
-    .brand-mark img{width:38px;height:38px;object-fit:contain}
+    .brand-mark img{height:44px;width:auto;object-fit:contain}
     .brand-mark-fallback{
       width:38px;height:38px;border-radius:10px;
       background:var(--accent);display:flex;align-items:center;
       justify-content:center;color:white;font-size:18px;font-weight:700;
     }
-    .brand-name{color:#FAFAFA;font-size:19px;font-weight:700;letter-spacing:-.3px}
+    .brand-name{color:#18181B;font-size:19px;font-weight:700;letter-spacing:-.3px}
 
     .hero{position:relative;z-index:1}
-    .hero-title{font-size:34px;font-weight:800;color:#FAFAFA;line-height:1.2;margin-bottom:14px;letter-spacing:-.6px}
+    .hero-title{font-size:34px;font-weight:800;color:#18181B;line-height:1.2;margin-bottom:14px;letter-spacing:-.6px}
     .hero-title span{color:var(--accent)}
-    .hero-sub{font-size:14px;color:#71717A;line-height:1.7;max-width:340px}
+    .hero-sub{font-size:14px;color:#52525B;line-height:1.7;max-width:340px}
 
     .feature-list{display:flex;flex-direction:column;gap:14px;position:relative;z-index:1}
     .feature-item{display:flex;align-items:center;gap:12px}
     .feature-icon{
       width:34px;height:34px;border-radius:8px;
-      background:rgba(91,79,232,.2);display:flex;align-items:center;
-      justify-content:center;color:#A5B4FC;flex-shrink:0;font-size:17px;
+      background:rgba(14,124,145,.12);display:flex;align-items:center;
+      justify-content:center;color:var(--accent);flex-shrink:0;font-size:17px;
     }
-    .feature-text{font-size:13px;color:#A1A1AA}
+    .feature-text{font-size:13px;color:#52525B}
 
     /* Right panel */
     .split-right{

@@ -5,7 +5,7 @@
   <link rel="icon" href="/img/logo.png">
   <link rel="manifest" href="/manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeCom AILO — Milestones</title>
+  <title>MeCom AILO Milestones</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="/styles/base.css">
   <style>
@@ -27,7 +27,7 @@
       transform:rotate(45deg);
     }
     .ms-item.tercapai::before { background:#10B981;box-shadow:0 0 0 3px #10B98130 }
-    .ms-item.pending::before  { background:var(--accent);box-shadow:0 0 0 3px var(--accent-light,#5B4FE820) }
+    .ms-item.pending::before  { background:var(--accent);box-shadow:0 0 0 3px var(--accent-light,#0E7C9120) }
     .ms-item.overdue::before  { background:#EF4444;box-shadow:0 0 0 3px #EF444430 }
 
     .ms-head { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap }
@@ -226,7 +226,7 @@ function renderTimeline(milestones) {
     const badgeFg = ms.status === 'tercapai' ? '#065F46' : (isOver ? '#991B1B' : '#1E40AF');
     const badgeTxt= ms.status === 'tercapai' ? '✓ Tercapai' : (isOver ? '⚠ Overdue' : '○ Pending');
 
-    const canEdit = ['direktur_coe', 'wakil_direktur_coe', 'sekretaris_coe'].includes(curUser?.role) ||
+    const canEdit = ['super_admin', 'direktur_coe', 'wakil_direktur_coe', 'sekretaris_coe'].includes(curUser?.role) ||
                     ms.createdBy?._id === curUser?._id;
 
     // Progress dari task

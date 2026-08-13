@@ -111,7 +111,7 @@ router.get('/', auth, async (req, res) => {
 
   // Req #11e: user biasa (dosen) hanya melihat task yang terkait dirinya.
   // Direktur CoE/Wakil Direktur CoE/Sekretaris CoE = pemantau global → lihat semua task.
-  const GLOBAL_VIEW_ROLES = ['direktur_coe', 'sekretaris_coe', 'wakil_direktur_coe'];
+  const GLOBAL_VIEW_ROLES = TOP_TIER_ROLES;
   if (!GLOBAL_VIEW_ROLES.includes(req.user.role) && mine !== 'true') {
     const uid = req.user._id;
     filter.$or = [

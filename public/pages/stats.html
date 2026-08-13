@@ -5,7 +5,7 @@
   <link rel="icon" href="/img/logo.png">
   <link rel="manifest" href="/manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeCom AILO — KPI & Statistik</title>
+  <title>MeCom AILO KPI & Statistik</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="/styles/base.css">
   <style>
@@ -189,7 +189,7 @@ for (let y = now.getFullYear(); y >= now.getFullYear() - 3; y--) {
   tahunSel.appendChild(o);
 }
 
-function onPeriodeChange() { loadKpi(); if (['sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user.role)) loadAllManagers(); }
+function onPeriodeChange() { loadKpi(); if (['super_admin','sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user.role)) loadAllManagers(); }
 
 async function loadKpi() {
   const bulan = +document.getElementById('f-bulan').value;
@@ -298,7 +298,7 @@ async function loadAllManagers() {
 }
 
 async function init() {
-  if (['sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user.role)) {
+  if (['super_admin','sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user.role)) {
     document.getElementById('user-filter').style.display = '';
     const fUser = document.getElementById('f-user');
     const data  = await Users.list({ role:'dosen' }).catch(() => ({}));

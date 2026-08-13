@@ -1,16 +1,18 @@
 /* ── MeCom AILO Design System ─────────────────────────────────────────────────── */
 :root {
-  --accent:        #5B4FE8;
-  --accent-hover:  #4A3FD4;
-  --accent-light:  #EEEDFB;
-  --accent-dim:    rgba(91,79,232,0.12);
+  --accent:        #0E7C91;
+  --accent-hover:  #0A6275;
+  --accent-light:  #E4F3F5;
+  --accent-dim:    rgba(14,124,145,0.12);
+  --accent-2:      #F5821F;
+  --accent-2-light:#FEF1E4;
 
-  --sidebar-bg:    #23232A;
-  --sidebar-border: rgba(255,255,255,0.07);
+  --sidebar-bg:    #F7F5F0;
+  --sidebar-border: rgba(24,24,27,0.08);
 
-  --bg:            #F6F6F8;
+  --bg:            #FAF9F6;
   --surface:       #FFFFFF;
-  --surface-2:     #FAFAFB;
+  --surface-2:     #F3F1EC;
   --border:        rgba(24,24,27,0.08);
   --border-hover:  rgba(24,24,27,0.15);
 
@@ -98,18 +100,18 @@ input, textarea, select, button {
 
 /* Logo: tidak ada background, hanya gambar / teks */
 .sb-mark {
-  width: 32px;
   height: 32px;
+  max-width: 150px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   flex-shrink: 0;
   /* Tidak ada background — logo tampil langsung */
 }
 
 .sb-mark img {
-  width: 32px;
   height: 32px;
+  width: auto;
   object-fit: contain;
   display: block;
 }
@@ -129,8 +131,8 @@ input, textarea, select, button {
   flex-shrink: 0;
 }
 
-.sb-name { color: #FAFAFA; font-size: 15px; font-weight: 700; letter-spacing: -.3px; }
-.sb-ws   { color: #71717A; font-size: 11px; margin-top: 1px; }
+.sb-name { color: #26262B; font-size: 15px; font-weight: 700; letter-spacing: -.3px; }
+.sb-ws   { color: #9A9AA5; font-size: 11px; margin-top: 1px; }
 
 .sb-scroll {
   flex: 1;
@@ -143,7 +145,7 @@ input, textarea, select, button {
 .sb-section-label {
   font-size: 10px;
   font-weight: 600;
-  color: #3F3F46;
+  color: #ABABA8;
   letter-spacing: .8px;
   text-transform: uppercase;
   padding: 8px 10px 5px;
@@ -155,7 +157,7 @@ input, textarea, select, button {
   gap: 9px;
   padding: 8px 10px;
   border-radius: var(--r-sm);
-  color: #71717A;
+  color: #5B5B66;
   font-size: 13.5px;
   cursor: pointer;
   transition: var(--transition);
@@ -163,8 +165,8 @@ input, textarea, select, button {
   white-space: nowrap;
   overflow: hidden;
 }
-.sb-link:hover { background: rgba(255,255,255,0.06); color: #D4D4D8; }
-.sb-link.active { background: rgba(91,79,232,0.18); color: #FAFAFA; }
+.sb-link:hover { background: rgba(24,24,27,0.05); color: #26262B; }
+.sb-link.active { background: rgba(14,124,145,0.12); color: #26262B; }
 .sb-link.active i { color: var(--accent); }
 .sb-link i { font-size: 17px; flex-shrink: 0; }
 .sb-link .sb-badge {
@@ -193,7 +195,7 @@ input, textarea, select, button {
   flex-shrink: 0;
   transition: var(--transition);
 }
-.sb-user:hover { background: rgba(255,255,255,0.05); }
+.sb-user:hover { background: rgba(24,24,27,0.05); }
 
 .sb-av {
   width: 32px;
@@ -211,8 +213,8 @@ input, textarea, select, button {
 }
 .sb-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 
-.sb-uname { color: #E4E4E7; font-size: 13px; font-weight: 600; }
-.sb-urole { color: #71717A; font-size: 11px; }
+.sb-uname { color: #26262B; font-size: 13px; font-weight: 600; }
+.sb-urole { color: #9A9AA5; font-size: 11px; }
 
 /* ── Main area ────────────────────────────────────────────────────────────── */
 .main {
@@ -267,7 +269,7 @@ input, textarea, select, button {
 .btn i { font-size: 15px; }
 
 .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
-.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); box-shadow: 0 2px 8px rgba(91,79,232,0.3); }
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); box-shadow: 0 2px 8px rgba(14,124,145,0.3); }
 
 .btn-danger { background: var(--red-bg); color: var(--red-text); border-color: rgba(220,38,38,.2); }
 .btn-danger:hover { background: #FEE2E2; }

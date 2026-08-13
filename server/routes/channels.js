@@ -52,7 +52,7 @@ router.get('/:id', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   const ch = await Channel.findById(req.params.id);
   if (!ch) return res.status(404).json({ message: 'Channel tidak ditemukan' });
-  if (ch.createdBy.toString() !== req.user._id.toString() && req.user.role !== 'direktur_coe')
+  if (ch.createdBy.toString() !== req.user._id.toString() && !TOP_TIER_ROLES.includes(req.user.role))
     return res.status(403).json({ message: 'Hanya pembuat yang dapat mengedit channel' });
 
   if (req.body.nama        !== undefined) ch.nama      = req.body.nama;
