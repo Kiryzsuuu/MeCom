@@ -1,11 +1,11 @@
-// Intrack Service Worker — Web Push
+// MeCom AILO Service Worker — Web Push
 
 self.addEventListener('push', event => {
   if (!event.data) return;
 
   let data;
   try { data = event.data.json(); }
-  catch { data = { title: 'Intrack', body: event.data.text(), url: '/' }; }
+  catch { data = { title: 'MeCom AILO', body: event.data.text(), url: '/' }; }
 
   const options = {
     body:    data.body  || '',
@@ -20,7 +20,7 @@ self.addEventListener('push', event => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Intrack', options)
+    self.registration.showNotification(data.title || 'MeCom AILO', options)
   );
 });
 
@@ -31,7 +31,7 @@ self.addEventListener('notificationclick', event => {
   const url = event.notification.data?.url || '/';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      // Fokus ke tab yang sudah buka Intrack
+      // Fokus ke tab yang sudah buka MeCom AILO
       for (const client of list) {
         if (client.url.includes(self.location.origin)) {
           client.focus();

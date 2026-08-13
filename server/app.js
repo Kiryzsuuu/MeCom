@@ -88,7 +88,7 @@ const PORT = process.env.PORT || 5001;
 
 connectDB().then(() => {
   server.listen(PORT, () => {
-    console.log(`Intrack berjalan di http://localhost:${PORT}`);
+    console.log(`MeCom AILO berjalan di http://localhost:${PORT}`);
     startCronJobs();
   });
 });

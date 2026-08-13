@@ -1,23 +1,23 @@
-/* ── Intrack Design System ─────────────────────────────────────────────────── */
+/* ── MeCom AILO Design System ─────────────────────────────────────────────────── */
 :root {
   --accent:        #5B4FE8;
   --accent-hover:  #4A3FD4;
   --accent-light:  #EEEDFB;
   --accent-dim:    rgba(91,79,232,0.12);
 
-  --sidebar-bg:    #18181B;
-  --sidebar-border: rgba(255,255,255,0.06);
+  --sidebar-bg:    #23232A;
+  --sidebar-border: rgba(255,255,255,0.07);
 
-  --bg:            #F2F2F5;
+  --bg:            #F6F6F8;
   --surface:       #FFFFFF;
-  --surface-2:     #F7F7F9;
-  --border:        rgba(0,0,0,0.07);
-  --border-hover:  rgba(0,0,0,0.14);
+  --surface-2:     #FAFAFB;
+  --border:        rgba(24,24,27,0.08);
+  --border-hover:  rgba(24,24,27,0.15);
 
-  --text:          #18181B;
-  --text-2:        #52525B;
-  --text-3:        #A1A1AA;
-  --text-4:        #D4D4D8;
+  --text:          #26262B;
+  --text-2:        #5B5B66;
+  --text-3:        #9A9AA5;
+  --text-4:        #D8D8DE;
 
   --green:  #16A34A; --green-bg:  #DCFCE7; --green-text: #166534;
   --orange: #EA580C; --orange-bg: #FFF7ED; --orange-text:#9A3412;
@@ -37,32 +37,10 @@
   --topbar-h:  52px;
   --sprint-h:  48px;
 
-  --font: -apple-system, "Inter", "Segoe UI", sans-serif;
-  --mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro Icons", "Inter", "Segoe UI", sans-serif;
+  --mono: "SF Mono", "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
 
   --transition: all .15s ease;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --accent-light: #1E1B40;
-    --bg:           #0C0C0E;
-    --surface:      #18181B;
-    --surface-2:    #27272A;
-    --border:       rgba(255,255,255,0.07);
-    --border-hover: rgba(255,255,255,0.14);
-    --text:         #FAFAFA;
-    --text-2:       #A1A1AA;
-    --text-3:       #52525B;
-    --text-4:       #3F3F46;
-    --green-bg:  #052E16; --green-text: #86EFAC;
-    --orange-bg: #2C0A00; --orange-text:#FDBA74;
-    --red-bg:    #2D0A0A; --red-text:   #FCA5A5;
-    --blue-bg:   #0C1A40; --blue-text:  #93C5FD;
-    --purple-bg: #1A0E36; --purple-text:#C4B5FD;
-    --pink-bg:   #2D0A1E; --pink-text:  #F9A8D4;
-    --teal-bg:   #042926; --teal-text:  #5EEAD4;
-  }
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

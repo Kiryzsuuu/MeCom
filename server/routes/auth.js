@@ -104,7 +104,7 @@ router.post('/forgot-password', async (req, res) => {
   if (mailSent) {
     await sendMail({
       to: user.email,
-      subject: '[Intrack] Kode OTP Reset Password',
+      subject: '[MeCom AILO] Kode OTP Reset Password',
       html: `
         <!DOCTYPE html><html><head><meta charset="UTF-8">
         <style>body{font-family:-apple-system,Arial,sans-serif;background:#F2F2F5;margin:0;padding:20px}
@@ -122,7 +122,7 @@ router.post('/forgot-password', async (req, res) => {
           <p>Kode berlaku selama <strong>10 menit</strong>. Jangan bagikan kode ini kepada siapapun.</p>
           <p style="font-size:12px;color:#71717A">Jika Anda tidak merasa meminta reset password, abaikan email ini.</p>
         </div>
-        <div class="ftr">Intrack — Sistem internal perusahaan.</div>
+        <div class="ftr">MeCom AILO — Sistem internal perusahaan.</div>
         </div></body></html>`,
     });
   }

@@ -1,5 +1,5 @@
 /**
- * Intrack Custom Dialogs — pengganti alert / confirm / prompt bawaan browser
+ * MeCom AILO Custom Dialogs — pengganti alert / confirm / prompt bawaan browser
  * Ekspor: showAlert(msg), showConfirm(msg, opts), showPrompt(msg, opts)
  */
 (function () {

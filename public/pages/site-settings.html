@@ -5,7 +5,7 @@
   <link rel="icon" href="/img/logo.png">
   <link rel="manifest" href="/manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Intrack — Site Settings</title>
+  <title>MeCom AILO — Site Settings</title>
   <link rel="icon" type="image/png" href="/img/logo.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="/styles/base.css">
@@ -92,7 +92,7 @@
             <div style="display:flex;flex-direction:column;gap:16px">
               <div class="field">
                 <label>Nama Aplikasi</label>
-                <input type="text" id="s-appname" placeholder="Intrack" oninput="updatePreview()">
+                <input type="text" id="s-appname" placeholder="MeCom AILO" oninput="updatePreview()">
               </div>
               <div class="field">
                 <label>Accent Color</label>
@@ -129,11 +129,11 @@
                   <div class="lp-mark" id="lp-mark">
                     <img src="/img/logo.png" onerror="this.style.display='none'">
                   </div>
-                  <div class="lp-name" id="lp-appname">Intrack</div>
+                  <div class="lp-name" id="lp-appname">MeCom AILO</div>
                 </div>
                 <div class="lp-hero">
                   <div class="lp-title" id="lp-title">Kelola task.<br><span id="lp-title-accent" style="color:var(--accent)">Pantau KPI tim.</span></div>
-                  <div class="lp-sub" id="lp-sub">Intrack membantu Direksi dan Manager merencanakan, melacak, dan menyelesaikan pekerjaan.</div>
+                  <div class="lp-sub" id="lp-sub">MeCom AILO membantu Direksi dan Manager merencanakan, melacak, dan menyelesaikan pekerjaan.</div>
                 </div>
                 <div class="lp-features" id="lp-features"></div>
               </div>
@@ -180,7 +180,7 @@
             </div>
             <div class="field">
               <label>Subjudul Form</label>
-              <input type="text" id="s-loginsub" placeholder="Masuk ke akun Intrack Anda">
+              <input type="text" id="s-loginsub" placeholder="Masuk ke akun MeCom AILO Anda">
             </div>
           </div>
         </div>
@@ -223,7 +223,7 @@
             <div class="row-2">
               <div class="field">
                 <label>Nama &amp; Alamat Pengirim (From)</label>
-                <input type="text" id="s-smtp-from" placeholder='"Intrack" <noreply@perusahaan.com>'>
+                <input type="text" id="s-smtp-from" placeholder='"MeCom AILO" <noreply@perusahaan.com>'>
                 <div class="hint">Format: "Nama" &lt;email&gt; atau hanya email</div>
               </div>
               <div class="field">
@@ -264,12 +264,12 @@ let features = [];
 
 async function loadSettings() {
   const s = await SiteSettings.get();
-  document.getElementById('s-appname').value    = s.appName    || 'Intrack';
+  document.getElementById('s-appname').value    = s.appName    || 'MeCom AILO';
   document.getElementById('s-hero1').value      = s.heroLine1  || 'Kelola task.';
   document.getElementById('s-hero2').value      = s.heroLine2  || 'Pantau KPI tim.';
   document.getElementById('s-herosub').value    = s.heroSub    || '';
   document.getElementById('s-logintitle').value = s.loginTitle || 'Selamat datang';
-  document.getElementById('s-loginsub').value   = s.loginSubtitle || 'Masuk ke akun Intrack Anda';
+  document.getElementById('s-loginsub').value   = s.loginSubtitle || 'Masuk ke akun MeCom AILO Anda';
 
   const color = s.accentColor || '#5B4FE8';
   document.getElementById('s-color').value     = color;
@@ -312,7 +312,7 @@ function syncColorPicker() {
 }
 
 function updatePreview() {
-  const name   = document.getElementById('s-appname').value || 'Intrack';
+  const name   = document.getElementById('s-appname').value || 'MeCom AILO';
   const h1     = document.getElementById('s-hero1').value   || 'Kelola task.';
   const h2     = document.getElementById('s-hero2').value   || 'Pantau KPI tim.';
   const sub    = document.getElementById('s-herosub').value || '';

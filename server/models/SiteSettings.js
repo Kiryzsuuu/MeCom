@@ -6,14 +6,14 @@ const featureSchema = new mongoose.Schema({
 }, { _id: false });
 
 const siteSettingsSchema = new mongoose.Schema({
-  appName:      { type: String, default: 'Intrack' },
+  appName:      { type: String, default: 'MeCom AILO' },
   appLogo:      { type: String, default: null },
   accentColor:  { type: String, default: '#5B4FE8' },
 
   // Login page — left panel
   heroLine1:    { type: String, default: 'Kelola task.' },
   heroLine2:    { type: String, default: 'Pantau KPI tim.' },
-  heroSub:      { type: String, default: 'Intrack membantu Direksi dan Manager merencanakan, melacak, dan menyelesaikan pekerjaan dengan sistem approval dan KPI otomatis.' },
+  heroSub:      { type: String, default: 'MeCom AILO membantu Direksi dan Manager merencanakan, melacak, dan menyelesaikan pekerjaan dengan sistem approval dan KPI otomatis.' },
   loginFeatures: {
     type: [featureSchema],
     default: [
@@ -25,7 +25,7 @@ const siteSettingsSchema = new mongoose.Schema({
 
   // Login page — right panel
   loginTitle:   { type: String, default: 'Selamat datang' },
-  loginSubtitle:{ type: String, default: 'Masuk ke akun Intrack Anda' },
+  loginSubtitle:{ type: String, default: 'Masuk ke akun MeCom AILO Anda' },
 
   // SMTP
   smtpHost:   { type: String, default: '' },

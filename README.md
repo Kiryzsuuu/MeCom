@@ -1,6 +1,6 @@
-# Intrack UI — Complete Web Mockup
+# MeCom AILO UI — Complete Web Mockup
 
-Mockup HTML/CSS/JS lengkap untuk aplikasi manajemen project Intrack.
+Mockup HTML/CSS/JS lengkap untuk aplikasi manajemen project MeCom AILO.
 
 ## Halaman
 
@@ -20,13 +20,13 @@ Mockup HTML/CSS/JS lengkap untuk aplikasi manajemen project Intrack.
 ## Cara pakai
 
 **Paling mudah — Live Server:**
-1. Buka folder `intrack` di VS Code
+1. Buka folder `mecomailo` di VS Code
 2. Install extension **Live Server** (Ritwick Dey)  
 3. Klik kanan `index.html` → **Open with Live Server**
 
 **Atau buka langsung:**
 ```
-open intrack/src/pages/login.html
+open mecomailo/src/pages/login.html
 ```
 
 ## Navigasi
@@ -53,6 +53,6 @@ deploy/      Docker + docker-compose
 ## Design system
 
 - **Accent**: `#5B4FE8` (purple-indigo)
-- **Font**: System font stack (`-apple-system`, Inter, Segoe UI)
-- **Dark mode**: otomatis via `prefers-color-scheme`
+- **Font**: SF Pro (`-apple-system`/`SF Pro Display`/`SF Pro Text`, fallback Inter, Segoe UI)
+- **Theme**: Terang (light) secara konsisten
 - **Icons**: [Tabler Icons](https://tabler-icons.io/)

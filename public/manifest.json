@@ -1,12 +1,12 @@
 {
-  "name": "Intrack",
-  "short_name": "Intrack",
+  "name": "MeCom AILO",
+  "short_name": "AILO",
   "description": "Task Management & KPI Tracker",
   "start_url": "/pages/dashboard.html",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#0F0F12",
+  "background_color": "#F6F6F8",
   "theme_color": "#5B4FE8",
   "lang": "id",
   "icons": [

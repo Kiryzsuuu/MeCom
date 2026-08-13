@@ -1,5 +1,5 @@
 /**
- * Intrack API helper — semua komunikasi ke backend melalui file ini
+ * MeCom AILO API helper — semua komunikasi ke backend melalui file ini
  */
 
 const API_BASE = window.location.origin + '/api';

@@ -27,7 +27,7 @@ router.get('/kpi/pdf', auth, requireRole('direksi'), async (req, res) => {
   doc.pipe(res);
 
   // Header
-  doc.fontSize(18).font('Helvetica-Bold').text('Intrack — Laporan KPI', { align: 'center' });
+  doc.fontSize(18).font('Helvetica-Bold').text('MeCom AILO — Laporan KPI', { align: 'center' });
   doc.fontSize(11).font('Helvetica').text(`Periode: ${BULAN_NAMA[bulan - 1]} ${tahun}`, { align: 'center' });
   doc.moveDown(1.5);
 

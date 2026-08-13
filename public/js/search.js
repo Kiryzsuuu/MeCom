@@ -1,5 +1,5 @@
 /**
- * Intrack Global Search — Command Palette (Ctrl+K / Cmd+K)
+ * MeCom AILO Global Search — Command Palette (Ctrl+K / Cmd+K)
  * Inject via <script src="/js/search.js"></script> on every page
  */
 (function () {

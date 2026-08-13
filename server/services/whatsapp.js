@@ -18,7 +18,7 @@ async function initWhatsApp() {
     const qrcode = require('qrcode-terminal');
 
     client = new Client({
-      authStrategy: new LocalAuth({ clientId: 'intrack' }),
+      authStrategy: new LocalAuth({ clientId: 'mecomailo' }),
       puppeteer: {
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -62,21 +62,21 @@ async function sendWA(nomorWa, pesan) {
 async function sendWATaskApproved(user, task) {
   if (!user.notifWa || !user.nomorWa) return;
   await sendWA(user.nomorWa,
-    `✅ *Intrack* — Task Disetujui\n\nHalo ${user.namaLengkap}, task Anda telah disetujui:\n*${task.judul}*\nDeadline: ${new Date(task.deadline).toLocaleDateString('id-ID')}`
+    `✅ *MeCom AILO* — Task Disetujui\n\nHalo ${user.namaLengkap}, task Anda telah disetujui:\n*${task.judul}*\nDeadline: ${new Date(task.deadline).toLocaleDateString('id-ID')}`
   );
 }
 
 async function sendWATaskRejected(user, task, catatan) {
   if (!user.notifWa || !user.nomorWa) return;
   await sendWA(user.nomorWa,
-    `❌ *Intrack* — Task Ditolak\n\nHalo ${user.namaLengkap}, task Anda ditolak:\n*${task.judul}*\nAlasan: ${catatan}`
+    `❌ *MeCom AILO* — Task Ditolak\n\nHalo ${user.namaLengkap}, task Anda ditolak:\n*${task.judul}*\nAlasan: ${catatan}`
   );
 }
 
 async function sendWADeadlineReminder(user, task, hariSisa) {
   if (!user.notifWa || !user.nomorWa) return;
   await sendWA(user.nomorWa,
-    `⏰ *Intrack* — Pengingat Deadline H-${hariSisa}\n\nHalo ${user.namaLengkap}, task berikut deadline ${hariSisa} hari lagi:\n*${task.judul}*\nDeadline: ${new Date(task.deadline).toLocaleDateString('id-ID')}`
+    `⏰ *MeCom AILO* — Pengingat Deadline H-${hariSisa}\n\nHalo ${user.namaLengkap}, task berikut deadline ${hariSisa} hari lagi:\n*${task.judul}*\nDeadline: ${new Date(task.deadline).toLocaleDateString('id-ID')}`
   );
 }
 

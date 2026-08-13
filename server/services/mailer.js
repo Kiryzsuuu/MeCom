@@ -14,7 +14,7 @@ async function getSmtpConfig() {
         secure: s.smtpSecure || false,
         user:   s.smtpUser,
         pass:   s.smtpPass,
-        from:   s.smtpFrom || `"Intrack" <${s.smtpUser}>`,
+        from:   s.smtpFrom || `"MeCom AILO" <${s.smtpUser}>`,
       };
     }
   } catch (err) {
@@ -29,7 +29,7 @@ async function getSmtpConfig() {
       secure: false,
       user:   process.env.MAIL_USER,
       pass:   process.env.MAIL_PASS,
-      from:   process.env.MAIL_FROM || `"Intrack" <${process.env.MAIL_USER}>`,
+      from:   process.env.MAIL_FROM || `"MeCom AILO" <${process.env.MAIL_USER}>`,
     };
   }
   return null;
@@ -85,7 +85,7 @@ function emailLayout(title, body) {
       <h2>${title}</h2>
       ${body}
     </div>
-    <div class="ftr">Intrack — Sistem internal perusahaan. Jangan balas email ini.</div>
+    <div class="ftr">MeCom AILO — Sistem internal perusahaan. Jangan balas email ini.</div>
   </div>
 </body>
 </html>`;
@@ -94,7 +94,7 @@ function emailLayout(title, body) {
 async function mailTaskApproved(user, task) {
   await sendMail({
     to: user.email,
-    subject: `[Intrack] Task Anda disetujui: ${task.judul}`,
+    subject: `[MeCom AILO] Task Anda disetujui: ${task.judul}`,
     html: emailLayout('Task Disetujui', `
       <p>Halo <strong>${user.namaLengkap}</strong>,</p>
       <p>Task berikut telah disetujui oleh Direksi dan siap dikerjakan:</p>
@@ -108,7 +108,7 @@ async function mailTaskApproved(user, task) {
 async function mailTaskRejected(user, task, catatan) {
   await sendMail({
     to: user.email,
-    subject: `[Intrack] Task Anda ditolak: ${task.judul}`,
+    subject: `[MeCom AILO] Task Anda ditolak: ${task.judul}`,
     html: emailLayout('Task Ditolak', `
       <p>Halo <strong>${user.namaLengkap}</strong>,</p>
       <p>Task berikut <strong>ditolak</strong> oleh Direksi:</p>
@@ -122,7 +122,7 @@ async function mailTaskRejected(user, task, catatan) {
 async function mailTaskRevisi(user, task, catatan) {
   await sendMail({
     to: user.email,
-    subject: `[Intrack] Task perlu direvisi: ${task.judul}`,
+    subject: `[MeCom AILO] Task perlu direvisi: ${task.judul}`,
     html: emailLayout('Task Dikembalikan untuk Revisi', `
       <p>Halo <strong>${user.namaLengkap}</strong>,</p>
       <p>Task berikut dikembalikan untuk revisi oleh Direksi:</p>
@@ -136,7 +136,7 @@ async function mailTaskRevisi(user, task, catatan) {
 async function mailTaskDone(user, task) {
   await sendMail({
     to: user.email,
-    subject: `[Intrack] Hasil kerja disetujui: ${task.judul}`,
+    subject: `[MeCom AILO] Hasil kerja disetujui: ${task.judul}`,
     html: emailLayout('Hasil Kerja Disetujui', `
       <p>Halo <strong>${user.namaLengkap}</strong>,</p>
       <p>Kerja bagus! Hasil kerja Anda pada task berikut telah disetujui:</p>
@@ -149,7 +149,7 @@ async function mailTaskDone(user, task) {
 async function mailDeadlineReminder(user, task, hariSisa) {
   await sendMail({
     to: user.email,
-    subject: `[Intrack] Pengingat deadline: ${task.judul} (H-${hariSisa})`,
+    subject: `[MeCom AILO] Pengingat deadline: ${task.judul} (H-${hariSisa})`,
     html: emailLayout(`Deadline Task H-${hariSisa}`, `
       <p>Halo <strong>${user.namaLengkap}</strong>,</p>
       <p>Task berikut akan jatuh tempo dalam <strong>${hariSisa} hari</strong>:</p>
@@ -163,7 +163,7 @@ async function mailDeadlineReminder(user, task, hariSisa) {
 async function mailPasswordReset(user, tempPassword) {
   await sendMail({
     to: user.email,
-    subject: '[Intrack] Reset Password',
+    subject: '[MeCom AILO] Reset Password',
     html: emailLayout('Reset Password', `
       <p>Halo <strong>${user.namaLengkap}</strong>,</p>
       <p>Password Anda telah direset. Berikut password sementara Anda:</p>
@@ -177,7 +177,7 @@ async function mailPasswordReset(user, tempPassword) {
 async function mailDailyDigest(user, stats) {
   await sendMail({
     to: user.email,
-    subject: `[Intrack] Ringkasan Harian — ${new Date().toLocaleDateString('id-ID')}`,
+    subject: `[MeCom AILO] Ringkasan Harian — ${new Date().toLocaleDateString('id-ID')}`,
     html: emailLayout('Ringkasan Harian', `
       <p>Halo <strong>${user.namaLengkap}</strong>, berikut ringkasan hari ini:</p>
       <ul>

@@ -1,5 +1,5 @@
 /**
- * Intrack Web Push — daftarkan Service Worker & subscribe browser push
+ * MeCom AILO Web Push — daftarkan Service Worker & subscribe browser push
  * Di-load di semua halaman setelah login (via sidebar.js atau inline)
  */
 (function () {
