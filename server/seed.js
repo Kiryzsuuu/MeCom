@@ -14,13 +14,13 @@ async function seed() {
   await Direktorat.deleteMany({});
   await User.deleteMany({});
 
-  // Superadmin — gunakan insertOne agar bypass pre-save hook double-hash
+  // Direktur CoE — gunakan insertOne agar bypass pre-save hook double-hash
   const hash = await bcrypt.hash('opet123', 12);
   await User.collection.insertOne({
     namaLengkap: 'Maskiryz',
     email: 'maskiryz23@gmail.com',
     passwordHash: hash,
-    role: 'superadmin',
+    role: 'direktur_coe',
     isFirstLogin: false,
     statusAktif: true,
     direktoratId: null,
@@ -31,7 +31,7 @@ async function seed() {
     createdAt: new Date(),
     updatedAt: new Date(),
   });
-  console.log('  ✓ maskiryz23@gmail.com (superadmin)');
+  console.log('  ✓ maskiryz23@gmail.com (direktur_coe)');
 
 
   // Direktorat
@@ -39,7 +39,7 @@ async function seed() {
   console.log('Direktorat cleared');
 
   console.log('\n✅ Seed selesai!');
-  console.log('\nLogin sebagai superadmin:');
+  console.log('\nLogin sebagai direktur_coe:');
   console.log('  Email   : maskiryz23@gmail.com');
   console.log('  Password: opet123');
 

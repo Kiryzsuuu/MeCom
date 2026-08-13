@@ -97,7 +97,7 @@ async function mailTaskApproved(user, task) {
     subject: `[MeCom AILO] Task Anda disetujui: ${task.judul}`,
     html: emailLayout('Task Disetujui', `
       <p>Halo <strong>${user.namaLengkap}</strong>,</p>
-      <p>Task berikut telah disetujui oleh Direksi dan siap dikerjakan:</p>
+      <p>Task berikut telah disetujui oleh Sekretaris CoE dan siap dikerjakan:</p>
       <p><strong>${task.judul}</strong></p>
       <p>Deadline: <strong>${new Date(task.deadline).toLocaleDateString('id-ID')}</strong></p>
       <a href="${process.env.APP_URL}/pages/task.html?id=${task._id}" class="btn">Lihat Task</a>
@@ -111,9 +111,9 @@ async function mailTaskRejected(user, task, catatan) {
     subject: `[MeCom AILO] Task Anda ditolak: ${task.judul}`,
     html: emailLayout('Task Ditolak', `
       <p>Halo <strong>${user.namaLengkap}</strong>,</p>
-      <p>Task berikut <strong>ditolak</strong> oleh Direksi:</p>
+      <p>Task berikut <strong>ditolak</strong> oleh Sekretaris CoE:</p>
       <p><strong>${task.judul}</strong></p>
-      <p>Catatan Direksi: <em>${catatan}</em></p>
+      <p>Catatan Sekretaris CoE: <em>${catatan}</em></p>
       <a href="${process.env.APP_URL}/pages/task.html?id=${task._id}" class="btn">Lihat Task</a>
     `),
   });
@@ -125,7 +125,7 @@ async function mailTaskRevisi(user, task, catatan) {
     subject: `[MeCom AILO] Task perlu direvisi: ${task.judul}`,
     html: emailLayout('Task Dikembalikan untuk Revisi', `
       <p>Halo <strong>${user.namaLengkap}</strong>,</p>
-      <p>Task berikut dikembalikan untuk revisi oleh Direksi:</p>
+      <p>Task berikut dikembalikan untuk revisi oleh Sekretaris CoE:</p>
       <p><strong>${task.judul}</strong></p>
       <p>Catatan revisi: <em>${catatan}</em></p>
       <a href="${process.env.APP_URL}/pages/task.html?id=${task._id}" class="btn">Kerjakan Revisi</a>

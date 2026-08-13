@@ -1,24 +1,26 @@
-// Hirarki akses: superadmin > komisaris > direksi > manager > staff
-const ROLE_LEVEL = { superadmin: 5, komisaris: 4, direksi: 3, manager: 2, staff: 1 };
+// Hirarki akses: direktur_coe = wakil_direktur_coe = sekretaris_coe (top-tier/admin) > dosen
+const TOP_TIER_ROLES = ['direktur_coe', 'wakil_direktur_coe', 'sekretaris_coe'];
+const ROLE_LEVEL = { direktur_coe: 2, wakil_direktur_coe: 2, sekretaris_coe: 2, dosen: 1 };
 
 function requireRole(...roles) {
   return (req, res, next) => {
-    if (req.user.role === 'superadmin' || roles.includes(req.user.role)) return next();
+    if (TOP_TIER_ROLES.includes(req.user.role) || roles.includes(req.user.role)) return next();
     return res.status(403).json({ message: 'Akses ditolak: hak akses tidak mencukupi' });
   };
 }
 
+// Top-tier/admin-level akses: direktur_coe, wakil_direktur_coe, dan sekretaris_coe setara
 function requireSuperadmin(req, res, next) {
-  if (req.user.role !== 'superadmin')
-    return res.status(403).json({ message: 'Akses ditolak: hanya superadmin' });
+  if (!TOP_TIER_ROLES.includes(req.user.role))
+    return res.status(403).json({ message: 'Akses ditolak: hanya Direktur CoE / Wakil Direktur CoE / Sekretaris CoE' });
   next();
 }
 
-// Minimal level direksi ke atas (komisaris, direksi, superadmin)
+// Minimal level sekretaris_coe ke atas (wakil_direktur_coe, sekretaris_coe, direktur_coe — semua setara)
 function requireDireksiUp(req, res, next) {
   const level = ROLE_LEVEL[req.user.role] || 0;
-  if (level >= 3) return next();
-  return res.status(403).json({ message: 'Akses ditolak: hanya Direksi ke atas' });
+  if (level >= 2) return next();
+  return res.status(403).json({ message: 'Akses ditolak: hanya Sekretaris CoE ke atas' });
 }
 
-module.exports = { requireRole, requireSuperadmin, requireDireksiUp, ROLE_LEVEL };
+module.exports = { requireRole, requireSuperadmin, requireDireksiUp, ROLE_LEVEL, TOP_TIER_ROLES };

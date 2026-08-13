@@ -2,13 +2,13 @@ const router      = require('express').Router();
 const crypto      = require('crypto');
 const User        = require('../models/User');
 const auth        = require('../middleware/auth');
-const { requireRole, requireSuperadmin } = require('../middleware/roles');
+const { requireRole, requireSuperadmin, TOP_TIER_ROLES } = require('../middleware/roles');
 const { uploadAvatar } = require('../middleware/upload');
 const { mailPasswordReset } = require('../services/mailer');
 const audit = require('../services/audit');
 
-// GET /api/users — Direksi/Superadmin: semua user; Manager: tidak bisa
-router.get('/', auth, requireRole('direksi'), async (req, res) => {
+// GET /api/users — Sekretaris CoE/Wakil Direktur CoE/Direktur CoE: semua user; Dosen: tidak bisa
+router.get('/', auth, requireRole('sekretaris_coe'), async (req, res) => {
   const { direktoratId, role, search, limit } = req.query;
   const filter = {};
   if (direktoratId) filter.direktoratId = direktoratId;
@@ -50,33 +50,33 @@ router.get('/mention', auth, async (req, res) => {
   res.json(users);
 });
 
-// GET /api/users/managers-direktorat/:id — manager dalam direktorat tertentu
-router.get('/managers-direktorat/:id', auth, async (req, res) => {
-  // Manager hanya bisa lihat direktorat sendiri
-  if (req.user.role === 'manager') {
+// GET /api/users/dosen-direktorat/:id — dosen dalam direktorat tertentu
+router.get('/dosen-direktorat/:id', auth, async (req, res) => {
+  // Dosen hanya bisa lihat direktorat sendiri
+  if (req.user.role === 'dosen') {
     const userDirId = req.user.direktoratId?._id?.toString() || req.user.direktoratId?.toString();
     if (userDirId !== req.params.id) {
       return res.status(403).json({ message: 'Akses ditolak' });
     }
   }
-  const users = await User.find({ direktoratId: req.params.id, role: 'manager', statusAktif: true })
+  const users = await User.find({ direktoratId: req.params.id, role: 'dosen', statusAktif: true })
     .select('-passwordHash')
     .sort({ namaLengkap: 1 });
   res.json(users);
 });
 
-// POST /api/users — Direksi/Superadmin buat user baru
-router.post('/', auth, requireRole('direksi'), async (req, res) => {
+// POST /api/users — Sekretaris CoE/Wakil Direktur CoE/Direktur CoE buat user baru
+router.post('/', auth, requireRole('sekretaris_coe'), async (req, res) => {
   const { namaLengkap, email, role, direktoratId, nomorWa } = req.body;
   if (!namaLengkap || !email || !role)
     return res.status(400).json({ message: 'Nama, email, dan role wajib diisi' });
 
-  // Hanya superadmin yang bisa buat superadmin/direksi baru
-  if (['superadmin', 'direksi'].includes(role) && req.user.role !== 'superadmin')
-    return res.status(403).json({ message: 'Hanya superadmin yang bisa membuat akun direksi/superadmin' });
+  // Hanya level top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) yang bisa buat akun top-tier baru
+  if (TOP_TIER_ROLES.includes(role) && !TOP_TIER_ROLES.includes(req.user.role))
+    return res.status(403).json({ message: 'Hanya Direktur CoE/Wakil Direktur CoE/Sekretaris CoE yang bisa membuat akun level tersebut' });
 
-  if (role === 'manager' && !direktoratId)
-    return res.status(400).json({ message: 'Manager wajib memiliki direktorat' });
+  if (role === 'dosen' && !direktoratId)
+    return res.status(400).json({ message: 'Dosen wajib memiliki direktorat' });
 
   const existing = await User.findOne({ email: email.toLowerCase() });
   if (existing) return res.status(400).json({ message: 'Email sudah terdaftar' });
@@ -87,7 +87,7 @@ router.post('/', auth, requireRole('direksi'), async (req, res) => {
     email,
     passwordHash: tempPassword,
     role,
-    direktoratId: role === 'direksi' ? null : direktoratId,
+    direktoratId: TOP_TIER_ROLES.includes(role) ? null : direktoratId,
     nomorWa: nomorWa || null,
     isFirstLogin: true,
   });
@@ -116,19 +116,18 @@ router.get('/:id', auth, async (req, res) => {
   res.json(user);
 });
 
-// PUT /api/users/:id — Direksi edit user, atau user edit diri sendiri (profil)
+// PUT /api/users/:id — top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) edit user, atau user edit diri sendiri (profil)
 router.put('/:id', auth, async (req, res) => {
   const isSelf = req.user._id.toString() === req.params.id;
-  const isDireksi = req.user.role === 'direksi';
-  const isSuperadmin = req.user.role === 'superadmin';
-  if (!isSelf && !isDireksi && !isSuperadmin)
+  const isTopTier = TOP_TIER_ROLES.includes(req.user.role);
+  if (!isSelf && !isTopTier)
     return res.status(403).json({ message: 'Akses ditolak' });
 
   const user = await User.findById(req.params.id);
   if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
 
-  // Superadmin tidak bisa diedit oleh selain superadmin
-  if (user.role === 'superadmin' && !isSuperadmin)
+  // Akun top-tier hanya bisa diedit oleh sesama top-tier
+  if (TOP_TIER_ROLES.includes(user.role) && !isTopTier)
     return res.status(403).json({ message: 'Akses ditolak' });
 
   if (isSelf) {
@@ -139,17 +138,17 @@ router.put('/:id', auth, async (req, res) => {
     if (req.body.nomorWa    !== undefined) user.nomorWa    = req.body.nomorWa;
   }
 
-  if (isDireksi || isSuperadmin) {
-    // Direksi/Superadmin bisa update field umum
+  if (isTopTier) {
+    // Direktur CoE/Wakil Direktur CoE/Sekretaris CoE bisa update field umum
     if (req.body.namaLengkap !== undefined) user.namaLengkap = req.body.namaLengkap;
     if (req.body.email       !== undefined) user.email       = req.body.email;
     if (req.body.direktoratId!== undefined) user.direktoratId= req.body.direktoratId;
     if (req.body.statusAktif !== undefined) user.statusAktif = req.body.statusAktif;
     if (req.body.nomorWa     !== undefined) user.nomorWa     = req.body.nomorWa;
-    // Hanya superadmin yang bisa ganti role
+    // Hanya top-tier yang bisa ganti role
     if (req.body.role !== undefined) {
-      if (req.user.role !== 'superadmin')
-        return res.status(403).json({ message: 'Hanya superadmin yang bisa mengubah role' });
+      if (!isTopTier)
+        return res.status(403).json({ message: 'Hanya Direktur CoE/Wakil Direktur CoE/Sekretaris CoE yang bisa mengubah role' });
       user.role = req.body.role;
     }
   }
@@ -158,8 +157,8 @@ router.put('/:id', auth, async (req, res) => {
   res.json({ message: 'User berhasil diupdate', user: user.toPublic() });
 });
 
-// POST /api/users/:id/reset-password — Direksi/Superadmin reset password
-router.post('/:id/reset-password', auth, requireRole('direksi'), async (req, res) => {
+// POST /api/users/:id/reset-password — Sekretaris CoE/Wakil Direktur CoE/Direktur CoE reset password
+router.post('/:id/reset-password', auth, requireRole('sekretaris_coe'), async (req, res) => {
   const user = await User.findById(req.params.id);
   if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
 
@@ -173,7 +172,7 @@ router.post('/:id/reset-password', auth, requireRole('direksi'), async (req, res
   res.json({ message: 'Password berhasil direset' });
 });
 
-// DELETE /api/users/:id — hanya superadmin
+// DELETE /api/users/:id — hanya top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE)
 router.delete('/:id', auth, requireSuperadmin, async (req, res) => {
   if (req.user._id.toString() === req.params.id)
     return res.status(400).json({ message: 'Tidak bisa menghapus akun sendiri' });
