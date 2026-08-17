@@ -1,4 +1,4 @@
-/* MeCom AILO — injects sidebar & sets active link */
+/* WorkPulse AILO — injects sidebar & sets active link */
 function buildSidebar(activePage, activeProject) {
   const pages = [
     { id:'dashboard',  href:'dashboard.html', icon:'ti-layout-dashboard', label:'Dashboard' },
@@ -6,8 +6,8 @@ function buildSidebar(activePage, activeProject) {
     { id:'inbox',      href:'inbox.html',      icon:'ti-bell',             label:'Inbox',     badge:2 },
   ];
   const projects = [
-    { id:'backend',  color:'#5B4FE8', name:'MeCom AILO Backend',  href:'board.html', count:14 },
-    { id:'frontend', color:'#16A34A', name:'MeCom AILO Frontend', href:'board.html', count:9  },
+    { id:'backend',  color:'#5B4FE8', name:'WorkPulse AILO Backend',  href:'board.html', count:14 },
+    { id:'frontend', color:'#16A34A', name:'WorkPulse AILO Frontend', href:'board.html', count:9  },
     { id:'design',   color:'#EA580C', name:'Design system',    href:'board.html', count:6  },
     { id:'docs',     color:'#DB2777', name:'Docs & API',       href:'board.html', count:5  },
   ];
@@ -30,7 +30,7 @@ function buildSidebar(activePage, activeProject) {
     <div class="sb-logo">
       <div class="sb-mark">P</div>
       <div>
-        <div class="sb-name">MeCom AILO</div>
+        <div class="sb-name">WorkPulse AILO</div>
         <div class="sb-ws">My Workspace</div>
       </div>
       <i class="ti ti-chevron-down sb-ws-chevron" aria-hidden="true"></i>

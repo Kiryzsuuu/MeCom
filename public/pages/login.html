@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <link rel="manifest" href="/manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeCom AILO Login</title>
+  <title>WorkPulse AILO Login</title>
   <link rel="icon" type="image/png" href="/img/logo.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <style>
@@ -126,12 +126,12 @@
         <img src="/img/logo.png" alt="Logo"
           onerror="this.parentElement.innerHTML='<div class=brand-mark-fallback>I</div>'">
       </div>
-      <div class="brand-name" id="brand-name">MeCom AILO</div>
+      <div class="brand-name" id="brand-name">WorkPulse AILO</div>
     </div>
 
     <div class="hero">
       <h1 class="hero-title" id="hero-title">Kelola task.<br>Pantau <span id="hero-title-accent">KPI tim.</span></h1>
-      <p class="hero-sub" id="hero-sub">MeCom AILO membantu Sekretaris CoE dan Dosen merencanakan, melacak, dan menyelesaikan pekerjaan dengan sistem approval dan KPI otomatis.</p>
+      <p class="hero-sub" id="hero-sub">WorkPulse AILO membantu Sekretaris CoE dan Dosen merencanakan, melacak, dan menyelesaikan pekerjaan dengan sistem approval dan KPI otomatis.</p>
     </div>
 
     <div class="feature-list" id="feature-list">
@@ -154,7 +154,7 @@
   <div class="split-right">
     <div class="form-box">
       <h2 class="form-title" id="login-title">Selamat datang</h2>
-      <p class="form-sub" id="login-subtitle">Masuk ke akun MeCom AILO Anda</p>
+      <p class="form-sub" id="login-subtitle">Masuk ke akun WorkPulse AILO Anda</p>
 
       <div class="alert alert-error" id="err-msg"></div>
       <div class="alert alert-info"  id="info-msg"></div>
@@ -218,7 +218,7 @@
     // Nama app
     var brandName = document.getElementById('brand-name');
     if (brandName && s.appName) brandName.textContent = s.appName;
-    document.title = (s.appName || 'MeCom AILO') + ' — Login';
+    document.title = (s.appName || 'WorkPulse AILO') + ' — Login';
 
     // Accent color
     if (s.accentColor) document.documentElement.style.setProperty('--accent', s.accentColor);

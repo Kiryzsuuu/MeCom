@@ -6,14 +6,14 @@ const featureSchema = new mongoose.Schema({
 }, { _id: false });
 
 const siteSettingsSchema = new mongoose.Schema({
-  appName:      { type: String, default: 'MeCom AILO' },
+  appName:      { type: String, default: 'WorkPulse AILO' },
   appLogo:      { type: String, default: null },
   accentColor:  { type: String, default: '#0E7C91' },
 
   // Login page — left panel
   heroLine1:    { type: String, default: 'Kelola task.' },
   heroLine2:    { type: String, default: 'Pantau KPI tim.' },
-  heroSub:      { type: String, default: 'MeCom AILO membantu Sekretaris CoE dan Dosen merencanakan, melacak, dan menyelesaikan pekerjaan dengan sistem approval dan KPI otomatis.' },
+  heroSub:      { type: String, default: 'WorkPulse AILO membantu Sekretaris CoE dan Dosen merencanakan, melacak, dan menyelesaikan pekerjaan dengan sistem approval dan KPI otomatis.' },
   loginFeatures: {
     type: [featureSchema],
     default: [
@@ -25,7 +25,7 @@ const siteSettingsSchema = new mongoose.Schema({
 
   // Login page — right panel
   loginTitle:   { type: String, default: 'Selamat datang' },
-  loginSubtitle:{ type: String, default: 'Masuk ke akun MeCom AILO Anda' },
+  loginSubtitle:{ type: String, default: 'Masuk ke akun WorkPulse AILO Anda' },
 
   // SMTP
   smtpHost:   { type: String, default: '' },

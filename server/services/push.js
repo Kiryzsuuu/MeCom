@@ -2,7 +2,7 @@ const webpush = require('web-push');
 const PushSubscription = require('../models/PushSubscription');
 
 webpush.setVapidDetails(
-  process.env.VAPID_EMAIL || 'mailto:admin@mecomailo.id',
+  process.env.VAPID_EMAIL || 'mailto:admin@WorkPulseailo.id',
   process.env.VAPID_PUBLIC_KEY,
   process.env.VAPID_PRIVATE_KEY,
 );

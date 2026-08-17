@@ -76,9 +76,9 @@ router.post('/smtp-test', auth, requireSuperadmin, async (req, res) => {
   try {
     await mailer.sendMail({
       to,
-      subject: '[MeCom AILO] Test SMTP Berhasil',
-      html: `<div style="font-family:Arial;padding:20px"><h2 style="color:#5B4FE8">✓ SMTP Berfungsi</h2><p>Konfigurasi SMTP MeCom AILO Anda berjalan dengan baik.</p><p style="color:#71717A;font-size:12px">Dikirim: ${new Date().toLocaleString('id-ID')}</p></div>`,
-      text: 'Test SMTP MeCom AILO berhasil.',
+      subject: '[WorkPulse AILO] Test SMTP Berhasil',
+      html: `<div style="font-family:Arial;padding:20px"><h2 style="color:#5B4FE8">✓ SMTP Berfungsi</h2><p>Konfigurasi SMTP WorkPulse AILO Anda berjalan dengan baik.</p><p style="color:#71717A;font-size:12px">Dikirim: ${new Date().toLocaleString('id-ID')}</p></div>`,
+      text: 'Test SMTP WorkPulse AILO berhasil.',
     });
     res.json({ message: 'Email test berhasil dikirim ke ' + to });
   } catch (err) {

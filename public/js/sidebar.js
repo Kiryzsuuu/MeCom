@@ -1,4 +1,4 @@
-/* MeCom AILO — Sidebar dinamis + Socket.io notifikasi realtime */
+/* WorkPulse AILO — Sidebar dinamis + Socket.io notifikasi realtime */
 
 function buildSidebar(user, activePage) {
   if (!user) return '';
@@ -72,7 +72,7 @@ function buildSidebar(user, activePage) {
         <img src="/img/logo.png" alt="Logo" style="width:100%;height:100%;object-fit:contain" onerror="this.parentElement.innerHTML='I'">
       </div>
       <div>
-        <div class="sb-name" id="sb-app-name">MeCom AILO</div>
+        <div class="sb-name" id="sb-app-name">WorkPulse AILO</div>
         <div class="sb-ws">${roleLabel}</div>
       </div>
     </div>

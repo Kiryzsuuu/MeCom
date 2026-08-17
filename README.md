@@ -1,6 +1,6 @@
-# MeCom AILO UI — Complete Web Mockup
+# WorkPulse AILO UI — Complete Web Mockup
 
-Mockup HTML/CSS/JS lengkap untuk aplikasi manajemen project MeCom AILO.
+Mockup HTML/CSS/JS lengkap untuk aplikasi manajemen project WorkPulse AILO.
 
 ## Halaman
 
@@ -20,13 +20,13 @@ Mockup HTML/CSS/JS lengkap untuk aplikasi manajemen project MeCom AILO.
 ## Cara pakai
 
 **Paling mudah — Live Server:**
-1. Buka folder `mecomailo` di VS Code
+1. Buka folder `WorkPulseailo` di VS Code
 2. Install extension **Live Server** (Ritwick Dey)  
 3. Klik kanan `index.html` → **Open with Live Server**
 
 **Atau buka langsung:**
 ```
-open mecomailo/src/pages/login.html
+open WorkPulseailo/src/pages/login.html
 ```
 
 ## Navigasi

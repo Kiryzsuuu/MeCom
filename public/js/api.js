@@ -1,5 +1,5 @@
 /**
- * MeCom AILO API helper — semua komunikasi ke backend melalui file ini
+ * WorkPulse AILO API helper — semua komunikasi ke backend melalui file ini
  */
 
 const API_BASE = window.location.origin + '/api';
