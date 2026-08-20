@@ -243,6 +243,20 @@ const Channels = {
   async deleteMessage(id, msgId)  { return apiFetch(`/channels/${id}/messages/${msgId}`, { method: 'DELETE' }); },
 };
 
+// ── Direct Messages (chat pribadi) ──────────────────────────────────────────────
+const DM = {
+  async conversations()           { return apiFetch('/dm/conversations'); },
+  async unreadCount()             { return apiFetch('/dm/unread-count'); },
+  async open(userId)              { return apiFetch('/dm/conversations', { method: 'POST', body: JSON.stringify({ userId }) }); },
+  async messages(id, params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return apiFetch(`/dm/conversations/${id}/messages` + (qs ? '?' + qs : ''));
+  },
+  async sendMessage(id, isi)      { return apiFetch(`/dm/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ isi }) }); },
+  async markRead(id)              { return apiFetch(`/dm/conversations/${id}/read`, { method: 'PUT' }); },
+  async deleteMessage(id, msgId)  { return apiFetch(`/dm/conversations/${id}/messages/${msgId}`, { method: 'DELETE' }); },
+};
+
 // ── Subtasks ──────────────────────────────────────────────────────────────────
 const Subtasks = {
   async list(taskId) { return apiFetch(`/subtasks?taskId=${taskId}`); },

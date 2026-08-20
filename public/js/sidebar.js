@@ -25,6 +25,7 @@ function buildSidebar(user, activePage) {
       { id: 'approval', href: '/pages/approval.html', icon: 'ti-checks', label: 'Task Approval', section: 'tasks' },
     ] : []),
     { id: 'inbox',      href: '/pages/inbox.html',      icon: 'ti-bell',             label: 'Notifikasi', section: 'tasks', badge: true },
+    { id: 'messages',   href: '/pages/messages.html',   icon: 'ti-message-circle',   label: 'Pesan',      section: 'workspace', badgeId: 'sb-dm-badge' },
     { id: 'channel',    href: '/pages/channel.html',    icon: 'ti-messages',         label: 'Channel',    section: 'workspace' },
     { id: 'kpi',        href: '/pages/stats.html',      icon: 'ti-chart-bar',        label: 'KPI',        section: 'workspace' },
     { id: 'milestones', href: '/pages/milestones.html', icon: 'ti-flag',             label: 'Milestones', section: 'workspace' },
@@ -55,6 +56,7 @@ function buildSidebar(user, activePage) {
           <i class="ti ${p.icon}" aria-hidden="true"></i>
           ${p.label}
           ${p.badge ? `<span class="sb-badge" id="sb-notif-badge" style="display:none">0</span>` : ''}
+          ${p.badgeId ? `<span class="sb-badge" id="${p.badgeId}" style="display:none">0</span>` : ''}
         </a>`;
       }).join('')}
     </div>`;
@@ -232,12 +234,24 @@ async function initSidebar(activePage) {
 
   // Load badge count
   loadNotifBadge();
+  loadDmBadge();
 }
 
 async function loadNotifBadge() {
   try {
     const { unreadCount } = await Notifikasi.list({ limit: 1 });
     const badge = document.getElementById('sb-notif-badge');
+    if (badge) {
+      badge.textContent = unreadCount;
+      badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+    }
+  } catch {}
+}
+
+async function loadDmBadge() {
+  try {
+    const { unreadCount } = await DM.unreadCount();
+    const badge = document.getElementById('sb-dm-badge');
     if (badge) {
       badge.textContent = unreadCount;
       badge.style.display = unreadCount > 0 ? 'flex' : 'none';
@@ -262,6 +276,20 @@ function initSocketNotif(user) {
     }
     // Toast
     showToast(`🔔 ${notif.judul}: ${notif.isi}`);
+  });
+
+  socket.on('dm:message', ({ conversationId, message }) => {
+    // Jangan tambah badge kalau lagi buka percakapan itu (halaman messages.html menandainya sendiri)
+    if (window.__activeDmConversationId === conversationId) return;
+    if (message.senderId?._id === user._id || message.senderId === user._id) return;
+
+    const badge = document.getElementById('sb-dm-badge');
+    if (badge) {
+      const current = parseInt(badge.textContent || '0');
+      badge.textContent = current + 1;
+      badge.style.display = 'flex';
+    }
+    showToast(`💬 ${message.senderId?.namaLengkap || 'Pesan baru'}: ${message.isi}`);
   });
 }
 

@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="/img/logo.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorkPulse AILO Pesan</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="/styles/base.css">
+  <style>
+    .dm-layout {
+      display: flex; height: calc(100vh - 56px); overflow: hidden;
+      background: var(--bg);
+    }
+
+    /* ── Conversation list panel ── */
+    .dm-list-panel {
+      width: 320px; flex-shrink: 0;
+      display: flex; flex-direction: column;
+      background: var(--surface); border-right: 0.5px solid var(--border);
+    }
+    .dm-list-head {
+      padding: 0 16px; height: 56px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 0.5px solid var(--border);
+    }
+    .dm-list-head h2 { font-size: 16px; font-weight: 700; margin: 0; }
+    .dm-new-btn {
+      width: 32px; height: 32px; border-radius: 8px; border: none; cursor: pointer;
+      background: var(--accent); color: #fff; display: flex; align-items: center;
+      justify-content: center; font-size: 16px; transition: var(--transition);
+    }
+    .dm-new-btn:hover { background: var(--accent-hover); }
+    .dm-search-wrap { padding: 10px 12px; border-bottom: 0.5px solid var(--border); }
+
+    .dm-conv-scroll { flex: 1; overflow-y: auto; }
+    .dm-conv-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+      cursor: pointer; transition: var(--transition); border-left: 3px solid transparent;
+    }
+    .dm-conv-item:hover { background: var(--surface-2); }
+    .dm-conv-item.active { background: var(--accent-dim); border-left-color: var(--accent); }
+    .dm-conv-av {
+      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 14px; font-weight: 700; overflow: hidden;
+    }
+    .dm-conv-av img { width: 100%; height: 100%; object-fit: cover; }
+    .dm-conv-info { flex: 1; min-width: 0; }
+    .dm-conv-name { font-size: 14px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dm-conv-last { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    .dm-conv-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+    .dm-conv-time { font-size: 11px; color: var(--text-3); }
+    .dm-conv-badge {
+      min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+      background: var(--accent); color: #fff; font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .dm-empty-state { padding: 40px 20px; text-align: center; color: var(--text-3); font-size: 13px; }
+
+    /* ── Chat panel ── */
+    .dm-chat-panel { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .dm-chat-head {
+      height: 56px; flex-shrink: 0; display: flex; align-items: center; gap: 10px;
+      padding: 0 20px; border-bottom: 0.5px solid var(--border); background: var(--surface);
+    }
+    .dm-chat-head .dm-conv-av { width: 34px; height: 34px; font-size: 12px; }
+    .dm-chat-head-name { font-size: 14px; font-weight: 700; color: var(--text); }
+    .dm-chat-head-role { font-size: 11px; color: var(--text-3); }
+
+    .dm-msg-scroll { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 2px; }
+    .dm-msg-row { display: flex; margin: 2px 0; }
+    .dm-msg-row.own { justify-content: flex-end; }
+    .dm-msg-bubble-wrap { max-width: 65%; display: flex; flex-direction: column; }
+    .dm-msg-row.own .dm-msg-bubble-wrap { align-items: flex-end; }
+    .dm-msg-bubble {
+      padding: 8px 12px; border-radius: 14px; font-size: 14px; line-height: 1.5;
+      word-break: break-word; position: relative;
+    }
+    .dm-msg-row:not(.own) .dm-msg-bubble { background: var(--surface-2); color: var(--text); border-bottom-left-radius: 4px; }
+    .dm-msg-row.own .dm-msg-bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+    .dm-msg-time { font-size: 10px; color: var(--text-3); margin-top: 3px; padding: 0 4px; display: flex; align-items: center; gap: 4px; }
+    .dm-msg-del {
+      opacity: 0; cursor: pointer; background: none; border: none; color: var(--text-3);
+      font-size: 12px; padding: 0; transition: var(--transition);
+    }
+    .dm-msg-row.own:hover .dm-msg-del { opacity: 1; }
+    .dm-msg-del:hover { color: #EF4444; }
+    .dm-day-sep { text-align: center; font-size: 11px; color: var(--text-3); margin: 14px 0 8px; }
+
+    .dm-input-wrap {
+      flex-shrink: 0; padding: 12px 20px; border-top: 0.5px solid var(--border);
+      background: var(--surface); display: flex; align-items: flex-end; gap: 10px;
+    }
+    .dm-input {
+      flex: 1; resize: none; border: 0.5px solid var(--border); border-radius: 12px;
+      padding: 10px 14px; font-size: 14px; font-family: inherit; max-height: 120px;
+      background: var(--surface-2); color: var(--text); line-height: 1.5;
+    }
+    .dm-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+    .dm-send-btn {
+      width: 38px; height: 38px; border-radius: 50%; border: none; cursor: pointer; flex-shrink: 0;
+      background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center;
+      font-size: 16px; transition: var(--transition);
+    }
+    .dm-send-btn:hover { background: var(--accent-hover); }
+    .dm-send-btn:disabled { opacity: .5; cursor: default; }
+
+    .dm-no-chat { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; color: var(--text-3); }
+    .dm-no-chat i { font-size: 48px; opacity: .4; }
+
+    /* ── New chat modal (contact picker) ── */
+    .dm-picker-item {
+      display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px;
+      cursor: pointer; transition: var(--transition);
+    }
+    .dm-picker-item:hover { background: var(--surface-2); }
+    .dm-picker-av {
+      width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; color: #fff; font-size: 12px; font-weight: 700; flex-shrink: 0; overflow: hidden;
+    }
+    .dm-picker-av img { width: 100%; height: 100%; object-fit: cover; }
+    .dm-picker-name { font-size: 13px; font-weight: 600; color: var(--text); }
+    .dm-picker-sub { font-size: 11px; color: var(--text-3); }
+
+    @media (max-width: 768px) {
+      .dm-list-panel { width: 100%; }
+      .dm-list-panel.hide-mobile-list { display: none; }
+      .dm-chat-panel.hide-mobile-chat { display: none; }
+      .dm-back-btn { display: inline-flex !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside id="sidebar" class="sidebar" data-page="messages"></aside>
+  <div class="main" style="padding:0;overflow:hidden">
+    <div class="dm-layout">
+
+      <div class="dm-list-panel" id="dm-list-panel">
+        <div class="dm-list-head">
+          <h2>Pesan</h2>
+          <button class="dm-new-btn" title="Chat baru" onclick="openPicker()"><i class="ti ti-plus"></i></button>
+        </div>
+        <div class="dm-search-wrap">
+          <input type="search" class="input" id="conv-search" placeholder="Cari percakapan..." oninput="renderConvList()" autocomplete="off">
+        </div>
+        <div class="dm-conv-scroll" id="conv-scroll">
+          <div class="dm-empty-state">Memuat...</div>
+        </div>
+      </div>
+
+      <div class="dm-chat-panel" id="dm-chat-panel">
+        <div class="dm-no-chat" id="dm-no-chat">
+          <i class="ti ti-message-circle"></i>
+          <div>Pilih percakapan atau mulai chat baru</div>
+        </div>
+        <div id="dm-chat-active" style="display:none;flex:1;flex-direction:column;min-height:0">
+          <div class="dm-chat-head">
+            <button class="dm-back-btn btn-icon" style="display:none" onclick="closeChatMobile()"><i class="ti ti-arrow-left"></i></button>
+            <div class="dm-conv-av" id="ch-av"></div>
+            <div>
+              <div class="dm-chat-head-name" id="ch-name">—</div>
+              <div class="dm-chat-head-role" id="ch-role">—</div>
+            </div>
+          </div>
+          <div class="dm-msg-scroll" id="dm-msg-scroll"></div>
+          <div class="dm-input-wrap">
+            <textarea class="dm-input" id="dm-input" rows="1" placeholder="Tulis pesan..." onkeydown="onInputKeydown(event)" oninput="autoGrow(this)"></textarea>
+            <button class="dm-send-btn" id="dm-send-btn" onclick="sendMessage()"><i class="ti ti-send"></i></button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Contact picker modal -->
+<div id="picker-overlay" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-title">Mulai Percakapan Baru</div>
+    <div class="field">
+      <input type="search" class="input" id="picker-search" placeholder="Cari nama..." oninput="renderPickerList()" autocomplete="off">
+    </div>
+    <div id="picker-list" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:2px"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closePicker()">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/search.js"></script>
+<script src="/js/sidebar.js"></script>
+<script src="/js/webpush.js"></script>
+<script src="/js/dialogs.js"></script>
+<script>
+if (!requireAuth()) throw 'redirect';
+const me = getUser();
+
+const AV_COLORS = ['#0E7C91','#16A34A','#EA580C','#0D9488','#DB2777','#5B4FE8'];
+function avColorFor(id) { return AV_COLORS[String(id).charCodeAt(0) % AV_COLORS.length]; }
+function initsOf(name) { return (name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2); }
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function avHtmlFor(user) {
+  if (user?.fotoProfil) return `<img src="${user.fotoProfil}" alt="">`;
+  return escHtml(initsOf(user?.namaLengkap));
+}
+function roleLabel(role) {
+  const map = { super_admin:'Super Admin', direktur_coe:'Direktur CoE', wakil_direktur_coe:'Wakil Direktur CoE', sekretaris_coe:'Sekretaris CoE', dosen:'Dosen' };
+  return map[role] || role || '';
+}
+function fmtTime(d) {
+  return new Date(d).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+}
+function fmtConvTime(d) {
+  const date = new Date(d), now = new Date();
+  const sameDay = date.toDateString() === now.toDateString();
+  if (sameDay) return fmtTime(d);
+  const diffDays = Math.floor((now - date) / 86400000);
+  if (diffDays < 7) return date.toLocaleDateString('id-ID', { weekday: 'short' });
+  return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+}
+function fmtDaySep(d) {
+  const date = new Date(d), now = new Date();
+  if (date.toDateString() === now.toDateString()) return 'Hari ini';
+  const yest = new Date(now); yest.setDate(yest.getDate() - 1);
+  if (date.toDateString() === yest.toDateString()) return 'Kemarin';
+  return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+let conversations  = [];
+let activeConvId   = null;
+let activeConv     = null;
+let messages       = [];
+let msgBefore      = null;
+let loadingMore    = false;
+let contacts       = [];
+
+async function init() {
+  await loadConversations();
+
+  // Buka percakapan langsung kalau datang dari link ?user=<id> (mis. tombol "Chat" di halaman lain)
+  const startUserId = new URLSearchParams(location.search).get('user');
+  if (startUserId) {
+    try {
+      const c = await DM.open(startUserId);
+      await selectConv(c._id, c);
+    } catch (err) { showToast(err.message || 'Gagal membuka chat', 'error'); }
+  }
+}
+
+async function loadConversations() {
+  try {
+    conversations = await DM.conversations();
+    renderConvList();
+  } catch (err) {
+    document.getElementById('conv-scroll').innerHTML = `<div class="dm-empty-state">Gagal memuat: ${escHtml(err.message || '')}</div>`;
+  }
+}
+
+function renderConvList() {
+  const q = (document.getElementById('conv-search').value || '').toLowerCase();
+  const list = conversations.filter(c => !q || (c.user?.namaLengkap || '').toLowerCase().includes(q));
+
+  document.getElementById('conv-scroll').innerHTML = list.map(c => {
+    const u = c.user;
+    if (!u) return '';
+    const active = c._id === activeConvId;
+    const lastPreview = c.lastMessage
+      ? (c.lastSenderId === me._id || c.lastSenderId?._id === me._id ? 'Anda: ' : '') + escHtml(c.lastMessage)
+      : 'Belum ada pesan';
+    return `
+      <div class="dm-conv-item${active ? ' active' : ''}" onclick="selectConv('${c._id}')">
+        <div class="dm-conv-av" style="background:${avColorFor(u._id)}">${avHtmlFor(u)}</div>
+        <div class="dm-conv-info">
+          <div class="dm-conv-name">${escHtml(u.namaLengkap)}</div>
+          <div class="dm-conv-last">${lastPreview}</div>
+        </div>
+        <div class="dm-conv-meta">
+          ${c.lastMessageAt ? `<div class="dm-conv-time">${fmtConvTime(c.lastMessageAt)}</div>` : ''}
+          ${c.unreadCount > 0 ? `<div class="dm-conv-badge">${c.unreadCount > 99 ? '99+' : c.unreadCount}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('') || '<div class="dm-empty-state">Belum ada percakapan.<br>Klik + untuk mulai chat baru.</div>';
+}
+
+async function selectConv(id, convData) {
+  activeConvId = id;
+  window.__activeDmConversationId = id;
+
+  document.getElementById('dm-no-chat').style.display = 'none';
+  document.getElementById('dm-chat-active').style.display = 'flex';
+  document.getElementById('dm-list-panel').classList.add('hide-mobile-list');
+  document.getElementById('dm-chat-panel').classList.remove('hide-mobile-chat');
+  document.querySelector('.dm-back-btn').style.display = window.innerWidth <= 768 ? 'inline-flex' : 'none';
+
+  let c = convData || conversations.find(x => x._id === id);
+  if (!c) { await loadConversations(); c = conversations.find(x => x._id === id); }
+  activeConv = c;
+  if (!conversations.find(x => x._id === id)) conversations.unshift(c);
+
+  const u = c.user;
+  document.getElementById('ch-av').style.background = avColorFor(u._id);
+  document.getElementById('ch-av').innerHTML = avHtmlFor(u);
+  document.getElementById('ch-name').textContent = u.namaLengkap;
+  document.getElementById('ch-role').textContent = roleLabel(u.role) + (u.statusAktif === false ? ' · Nonaktif' : '');
+
+  msgBefore = null;
+  messages = [];
+  document.getElementById('dm-msg-scroll').innerHTML = '<div class="dm-empty-state">Memuat pesan...</div>';
+
+  try {
+    messages = await DM.messages(id, { limit: 50 });
+    renderMessages();
+    scrollToBottom();
+    await DM.markRead(id);
+    c.unreadCount = 0;
+    renderConvList();
+  } catch (err) {
+    showToast(err.message || 'Gagal memuat pesan', 'error');
+  }
+}
+
+function closeChatMobile() {
+  document.getElementById('dm-list-panel').classList.remove('hide-mobile-list');
+  document.getElementById('dm-chat-panel').classList.add('hide-mobile-chat');
+  activeConvId = null;
+  window.__activeDmConversationId = null;
+}
+
+function renderMessages() {
+  const scroll = document.getElementById('dm-msg-scroll');
+  let html = '';
+  let lastDay = null;
+  for (const m of messages) {
+    const day = new Date(m.createdAt).toDateString();
+    if (day !== lastDay) { html += `<div class="dm-day-sep">${fmtDaySep(m.createdAt)}</div>`; lastDay = day; }
+    const isOwn = (m.senderId?._id || m.senderId) === me._id;
+    html += `
+      <div class="dm-msg-row${isOwn ? ' own' : ''}" id="dmmsg-${m._id}">
+        <div class="dm-msg-bubble-wrap">
+          <div class="dm-msg-bubble">${escHtml(m.isi).replace(/\n/g, '<br>')}</div>
+          <div class="dm-msg-time">
+            ${isOwn ? `<button class="dm-msg-del" title="Hapus" onclick="deleteMessage('${m._id}')"><i class="ti ti-trash"></i></button>` : ''}
+            ${fmtTime(m.createdAt)}
+          </div>
+        </div>
+      </div>`;
+  }
+  scroll.innerHTML = html;
+}
+
+function scrollToBottom() {
+  const scroll = document.getElementById('dm-msg-scroll');
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+function autoGrow(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function onInputKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+async function sendMessage() {
+  const input = document.getElementById('dm-input');
+  const isi = input.value.trim();
+  if (!isi || !activeConvId) return;
+
+  input.value = '';
+  autoGrow(input);
+  const btn = document.getElementById('dm-send-btn');
+  btn.disabled = true;
+
+  try {
+    const msg = await DM.sendMessage(activeConvId, isi);
+    messages.push(msg);
+    renderMessages();
+    scrollToBottom();
+
+    const c = conversations.find(x => x._id === activeConvId);
+    if (c) { c.lastMessage = isi.slice(0, 200); c.lastMessageAt = msg.createdAt; c.lastSenderId = me._id; }
+    conversations.sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+    renderConvList();
+  } catch (err) {
+    showToast(err.message || 'Gagal mengirim pesan', 'error');
+    input.value = isi;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function deleteMessage(msgId) {
+  const ok = await showConfirm('Hapus pesan ini?', { title: 'Hapus Pesan', okLabel: 'Hapus', type: 'danger' });
+  if (!ok) return;
+  try {
+    await DM.deleteMessage(activeConvId, msgId);
+    messages = messages.filter(m => m._id !== msgId);
+    renderMessages();
+  } catch (err) {
+    showToast(err.message || 'Gagal menghapus pesan', 'error');
+  }
+}
+
+// ── Contact picker (mulai chat baru) ────────────────────────────────────────────
+async function openPicker() {
+  document.getElementById('picker-overlay').style.display = 'flex';
+  document.getElementById('picker-search').value = '';
+  document.getElementById('picker-list').innerHTML = '<div class="dm-empty-state">Memuat...</div>';
+  try {
+    contacts = await Users.selectable();
+    contacts = contacts.filter(u => u._id !== me._id);
+    renderPickerList();
+  } catch (err) {
+    document.getElementById('picker-list').innerHTML = `<div class="dm-empty-state">Gagal memuat kontak</div>`;
+  }
+}
+function closePicker() { document.getElementById('picker-overlay').style.display = 'none'; }
+
+function renderPickerList() {
+  const q = (document.getElementById('picker-search').value || '').toLowerCase();
+  const list = contacts.filter(u => !q || u.namaLengkap.toLowerCase().includes(q));
+  document.getElementById('picker-list').innerHTML = list.map(u => `
+    <div class="dm-picker-item" onclick="startChatWith('${u._id}')">
+      <div class="dm-picker-av" style="background:${avColorFor(u._id)}">${avHtmlFor(u)}</div>
+      <div>
+        <div class="dm-picker-name">${escHtml(u.namaLengkap)}</div>
+        <div class="dm-picker-sub">${roleLabel(u.role)}${u.direktoratId ? ' · ' + escHtml(u.direktoratId.kode) : ''}</div>
+      </div>
+    </div>`).join('') || '<div class="dm-empty-state">Tidak ada hasil</div>';
+}
+
+async function startChatWith(userId) {
+  closePicker();
+  try {
+    const c = await DM.open(userId);
+    await selectConv(c._id, c);
+  } catch (err) {
+    showToast(err.message || 'Gagal membuka chat', 'error');
+  }
+}
+
+// ── Realtime ─────────────────────────────────────────────────────────────────────
+function initDmSocket() {
+  if (typeof io === 'undefined') return;
+  const token = getToken();
+  if (!token) return;
+  const socket = io(window.location.origin, { auth: { token } });
+
+  socket.on('dm:message', ({ conversationId, message }) => {
+    const isOwn = (message.senderId?._id || message.senderId) === me._id;
+
+    if (conversationId === activeConvId && !messages.some(m => m._id === message._id)) {
+      messages.push(message);
+      renderMessages();
+      scrollToBottom();
+      if (!isOwn) DM.markRead(activeConvId).catch(() => {});
+    }
+
+    let c = conversations.find(x => x._id === conversationId);
+    if (c) {
+      c.lastMessage = message.isi.slice(0, 200);
+      c.lastMessageAt = message.createdAt;
+      c.lastSenderId = message.senderId?._id || message.senderId;
+      if (conversationId !== activeConvId && !isOwn) c.unreadCount = (c.unreadCount || 0) + 1;
+      conversations.sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+      renderConvList();
+    } else if (!isOwn) {
+      loadConversations();
+    }
+  });
+
+  socket.on('dm:message-deleted', ({ conversationId, msgId }) => {
+    if (conversationId === activeConvId) {
+      messages = messages.filter(m => m._id !== msgId);
+      renderMessages();
+    }
+  });
+}
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 768) {
+    document.getElementById('dm-list-panel').classList.remove('hide-mobile-list');
+    document.getElementById('dm-chat-panel').classList.remove('hide-mobile-chat');
+    document.querySelector('.dm-back-btn').style.display = 'none';
+  }
+});
+
+window.addEventListener('beforeunload', () => { window.__activeDmConversationId = null; });
+
+init();
+initDmSocket();
+</script>
+</body>
+</html>
