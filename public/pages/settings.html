@@ -146,7 +146,12 @@
 
         <!-- Direktorat -->
         <div class="section-card">
-          <div class="section-head"><span class="section-title">Direktorat</span></div>
+          <div class="section-head">
+            <span class="section-title">Direktorat</span>
+            <button class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="openDirModal()">
+              <i class="ti ti-plus"></i> <span>Tambah Direktorat</span>
+            </button>
+          </div>
           <div class="dir-chips" id="dir-list">
             <div style="color:var(--text-3);font-size:13px">Memuat...</div>
           </div>
@@ -224,6 +229,27 @@
   </div>
 </div>
 
+<!-- Direktorat Modal -->
+<div id="dir-modal-overlay" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-title" id="dir-modal-title">Tambah Direktorat</div>
+    <div class="field">
+      <label>Nama Direktorat <span style="color:var(--red)">*</span></label>
+      <input type="text" id="dm-nama" placeholder="Contoh: Direktorat Akademik">
+    </div>
+    <div class="field">
+      <label>Kode <span style="color:var(--red)">*</span></label>
+      <input type="text" id="dm-kode" placeholder="Contoh: AKD" style="text-transform:uppercase">
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeDirModal()">Batal</button>
+      <button class="btn btn-primary" id="dm-btn" onclick="saveDirektorat()">
+        <i class="ti ti-check"></i> Simpan
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Impersonate Modal -->
 <div id="imp-modal-overlay">
   <div id="imp-modal">
@@ -271,20 +297,7 @@ const isSuperadmin = TOP_TIER_ROLES.includes(user.role);
 let allUsers = [], dirs = [], editId = null;
 
 async function init() {
-  dirs = await Direktorat.list().catch(() => []);
-
-  document.getElementById('dir-list').innerHTML = dirs.map(d => `
-    <div class="dir-chip">
-      <div style="font-size:12px;font-weight:700;color:var(--accent)">${d.kode}</div>
-      <div style="font-size:14px;font-weight:600;margin-top:2px">${d.nama}</div>
-    </div>`).join('') || '<div style="color:var(--text-3);font-size:13px">Tidak ada direktorat</div>';
-
-  const mDir = document.getElementById('m-direktorat');
-  dirs.forEach(d => {
-    const o = document.createElement('option'); o.value = d._id; o.textContent = `${d.kode} — ${d.nama}`;
-    mDir.appendChild(o);
-  });
-
+  await reloadDirektorat();
   loadUsers();
 }
 
@@ -380,6 +393,60 @@ function openModal(id) {
 function closeModal() {
   document.getElementById('modal-overlay').style.display = 'none';
   editId = null;
+}
+
+let editDirId = null;
+
+async function reloadDirektorat() {
+  dirs = await Direktorat.list().catch(() => []);
+  document.getElementById('dir-list').innerHTML = dirs.map(d => `
+    <div class="dir-chip" style="cursor:pointer" onclick="openDirModal('${d._id}')" title="Klik untuk edit">
+      <div style="font-size:12px;font-weight:700;color:var(--accent)">${d.kode}</div>
+      <div style="font-size:14px;font-weight:600;margin-top:2px">${d.nama}</div>
+    </div>`).join('') || '<div style="color:var(--text-3);font-size:13px">Tidak ada direktorat</div>';
+
+  const mDir = document.getElementById('m-direktorat');
+  mDir.innerHTML = '<option value="">Pilih direktorat...</option>';
+  dirs.forEach(d => {
+    const o = document.createElement('option'); o.value = d._id; o.textContent = `${d.kode} — ${d.nama}`;
+    mDir.appendChild(o);
+  });
+}
+
+function openDirModal(id) {
+  editDirId = id || null;
+  document.getElementById('dir-modal-title').textContent = id ? 'Edit Direktorat' : 'Tambah Direktorat';
+  document.getElementById('dm-btn').innerHTML = id ? '<i class="ti ti-check"></i> Simpan' : '<i class="ti ti-plus"></i> Tambah';
+
+  if (id) {
+    const d = dirs.find(x => x._id === id);
+    document.getElementById('dm-nama').value = d ? d.nama : '';
+    document.getElementById('dm-kode').value = d ? d.kode : '';
+  } else {
+    document.getElementById('dm-nama').value = '';
+    document.getElementById('dm-kode').value = '';
+  }
+  document.getElementById('dir-modal-overlay').style.display = 'flex';
+}
+
+function closeDirModal() {
+  document.getElementById('dir-modal-overlay').style.display = 'none';
+  editDirId = null;
+}
+
+async function saveDirektorat() {
+  const nama = document.getElementById('dm-nama').value.trim();
+  const kode = document.getElementById('dm-kode').value.trim().toUpperCase();
+  if (!nama || !kode) { showToast('Nama dan kode wajib diisi', 'error'); return; }
+
+  try {
+    if (editDirId) { await Direktorat.update(editDirId, { nama, kode }); showToast('Direktorat diupdate'); }
+    else            { await Direktorat.create({ nama, kode });           showToast('Direktorat ditambahkan'); }
+    closeDirModal();
+    await reloadDirektorat();
+  } catch (err) {
+    showToast(err.message || 'Gagal menyimpan direktorat', 'error');
+  }
 }
 
 async function saveUser() {
