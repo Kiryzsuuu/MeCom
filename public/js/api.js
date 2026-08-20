@@ -257,6 +257,12 @@ const DM = {
   async deleteMessage(id, msgId)  { return apiFetch(`/dm/conversations/${id}/messages/${msgId}`, { method: 'DELETE' }); },
 };
 
+// ── Voice (LiveKit) ──────────────────────────────────────────────────────────────
+const Voice = {
+  async token(room = 'general')       { return apiFetch(`/voice/token?room=${encodeURIComponent(room)}`); },
+  async participants(room = 'general') { return apiFetch(`/voice/participants?room=${encodeURIComponent(room)}`); },
+};
+
 // ── Subtasks ──────────────────────────────────────────────────────────────────
 const Subtasks = {
   async list(taskId) { return apiFetch(`/subtasks?taskId=${taskId}`); },

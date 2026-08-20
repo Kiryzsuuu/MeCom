@@ -849,6 +849,7 @@
 </div>
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
 <script src="/js/api.js"></script>
 <script src="/js/search.js"></script>
 <script src="/js/sidebar.js"></script>
@@ -1263,102 +1264,17 @@ function escHtml(s) {
 loadChannels();
 
 
-// ── Socket.io + WebRTC Voice ───────────────────────────────────────────────────
-let socket       = null;
-let peerConns    = {};   // { socketId: RTCPeerConnection }
-let peerRoles    = {};   // { socketId: 'offerer' | 'answerer' }
-let localStream  = null;
-let isMuted      = false;
-let isDeafened   = false;
-let isVideoOn    = false;
-let inVoice      = false;
-let voiceParticipants = {}; // { userId: { name, photo, socketId, muted, deafened, videoOn } }
+// ── Socket.io (channel text realtime only — voice now handled by LiveKit) ──────
+let socket = null;
 
 function getSocket() {
   if (socket && socket.connected) return socket;
   const token = localStorage.getItem('wt_token');
-  const _u = getUser();
-  socket = io({ auth: { token, photo: _u?.fotoProfil || null } });
-
-  socket.on('voice:participants', async (list) => {
-    voiceParticipants = {};
-    list.forEach(p => { voiceParticipants[p.userId] = p; });
-    list.filter(p => p.userId !== me._id).forEach(p => ensureParticipantTile(p));
-    renderVoiceParticipants();
-    if (!localStream) return;
-    for (const p of list) {
-      if (p.userId !== me._id) await createOffer(p.socketId);
-    }
-  });
-
-  socket.on('voice:user-joined', (p) => {
-    voiceParticipants[p.userId] = p;
-    ensureParticipantTile(p);
-    renderVoiceParticipants();
-    // JANGAN buat offer di sini. Pendatang baru yang menginisiasi offer
-    // (lewat 'voice:participants'). Kalau dua sisi sama-sama offer → glare,
-    // sebagian koneksi gagal → bisu/tuli saat ramai.
-    if (inVoice) playJoinSound();
-  });
-
-  socket.on('voice:user-left', ({ userId, socketId }) => {
-    const wasIn = !!voiceParticipants[userId];
-    delete voiceParticipants[userId];
-    closePeer(socketId);
-    renderVoiceParticipants();
-    removeVideoTile(socketId);
-    document.getElementById('vtile-p-' + userId)?.remove();
-    // Jika tile yg di-pin keluar, keluar dari spotlight
-    if (pinnedTileId && !document.getElementById(pinnedTileId)) unpinTile();
-    if (inVoice && wasIn) playLeaveSound();
-  });
-
-  socket.on('voice:user-status', ({ userId, muted, deafened, videoOn }) => {
-    if (voiceParticipants[userId]) {
-      Object.assign(voiceParticipants[userId], { muted, deafened, videoOn });
-      renderVoiceParticipants();
-    }
-  });
-
-  socket.on('voice:speaking', ({ userId, speaking }) => {
-    setParticipantSpeaking(userId, speaking);
-  });
-
-  // Presence: roster voice untuk yang BELUM join (preview siapa di dalam)
-  socket.on('voice:presence', ({ channelId, participants }) => {
-    if (channelId !== VOICE_ROOM_ID) return;
-    if (inVoice) return; // saat sudah join, roster diurus event lain
-    voiceParticipants = {};
-    (participants || []).forEach(p => { voiceParticipants[p.userId] = p; });
-    renderVoiceParticipants();
-  });
-
-  // Minta snapshot peserta voice saat konek
-  socket.on('connect', () => socket.emit('voice:peek', { channelId: VOICE_ROOM_ID }));
-
-  socket.on('voice:offer', async ({ fromSocketId, fromUserId, offer }) => {
-    peerRoles[fromSocketId] = 'answerer';
-    const pc = getOrCreatePeer(fromSocketId, fromUserId);
-    await pc.setRemoteDescription(offer);
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    socket.emit('voice:answer', { targetSocketId: fromSocketId, answer });
-  });
-
-  socket.on('voice:answer', async ({ fromSocketId, answer }) => {
-    const pc = peerConns[fromSocketId];
-    if (pc) await pc.setRemoteDescription(answer);
-  });
-
-  socket.on('voice:ice', async ({ fromSocketId, candidate }) => {
-    const pc = peerConns[fromSocketId];
-    if (pc && candidate) await pc.addIceCandidate(candidate);
-  });
+  socket = io({ auth: { token } });
 
   // ── Real-time channel messages ────────────────────────────────────────────
   socket.on('channel:message', (msg) => {
     if (msg.channelId !== activeChannelId) return;
-    // Skip jika pesan dari diri sendiri (sudah dirender saat send)
     const uid = msg.userId?._id || msg.userId;
     if (uid === me._id || uid?.toString() === me._id) return;
 
@@ -1391,13 +1307,41 @@ function getSocket() {
   return socket;
 }
 
-// Voice pakai room ID terpisah, tidak bergantung text channel
-const VOICE_ROOM_ID = 'general-voice';
+// ── LiveKit Voice ────────────────────────────────────────────────────────────
+const VOICE_ROOM_ID = 'general';
+
+let lkRoom     = null;
+let isMuted    = false;
+let isDeafened = false;
+let isVideoOn  = false;
+let inVoice    = false;
+let isScreenSharing   = false;
+let voiceParticipants = {}; // { userId: { userId, name, photo, muted, videoOn, isSelf } }
 
 async function joinVoice() {
-  // Sudah di voice — cukup tampilkan kembali call-view
   if (inVoice) { showCallView(); return; }
   showLobby();
+}
+
+// ── Presence preview (siapa di voice, sebelum join) ────────────────────────────
+let presencePoll = null;
+
+function startPresencePoll() {
+  stopPresencePoll();
+  pollPresenceOnce();
+  presencePoll = setInterval(pollPresenceOnce, 8000);
+}
+function stopPresencePoll() {
+  if (presencePoll) { clearInterval(presencePoll); presencePoll = null; }
+}
+async function pollPresenceOnce() {
+  if (inVoice) return; // saat sudah join, roster diurus event LiveKit langsung
+  try {
+    const list = await Voice.participants(VOICE_ROOM_ID);
+    voiceParticipants = {};
+    list.forEach(p => { voiceParticipants[p.userId] = p; });
+    renderVoiceParticipants();
+  } catch (e) {}
 }
 
 // ── Lobby pra-join (preview mic/kamera seperti Zoom/Meet) ─────────────────────
@@ -1413,7 +1357,6 @@ async function showLobby() {
     av.innerHTML = me.fotoProfil ? `<img src="${me.fotoProfil}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">` : inits;
   }
 
-  // Ambil stream preview (audio + video). Fallback audio-only bila kamera tidak ada/ditolak.
   try {
     lobbyStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
   } catch (e) {
@@ -1502,16 +1445,13 @@ function joinFromLobby() {
   if (!lobbyStream) { showToast('Media belum siap', 'error'); return; }
   stopLobbyMeter();
 
-  // Buang track video bila kamera dimatikan (jangan dikirim ke peserta lain)
-  if (!lobbyCamOn) {
-    lobbyStream.getVideoTracks().forEach(t => { t.stop(); lobbyStream.removeTrack(t); });
-  }
-  localStream = lobbyStream; lobbyStream = null;
+  // Lepas stream preview lobby — LiveKit akan minta capture sendiri saat connect
+  lobbyStream.getTracks().forEach(t => t.stop());
+  lobbyStream = null;
 
   isMuted    = !lobbyMicOn;
   isVideoOn  = lobbyCamOn;
   isDeafened = false;
-  localStream.getAudioTracks().forEach(t => t.enabled = lobbyMicOn);
 
   const lobby = document.getElementById('voice-lobby');
   if (lobby) lobby.style.display = 'none';
@@ -1519,9 +1459,125 @@ function joinFromLobby() {
   enterVoice();
 }
 
-// Inti masuk voice — asumsikan localStream & isMuted/isVideoOn sudah diset
-function enterVoice() {
+function micCaptureOptions() {
+  return {
+    deviceId: vsm.micId || undefined,
+    noiseSuppression: vsm.noise,
+    echoCancellation: vsm.echo,
+    autoGainControl: vsm.agc,
+  };
+}
+function camCaptureOptions() {
+  return vsm.camId ? { deviceId: vsm.camId } : undefined;
+}
+
+function upsertParticipant(p) {
+  let meta = {};
+  try { meta = JSON.parse(p.metadata || '{}'); } catch (e) {}
+  voiceParticipants[p.identity] = {
+    userId: p.identity,
+    name: p.name || 'User',
+    photo: meta.fotoProfil || null,
+    muted: !p.isMicrophoneEnabled,
+    videoOn: p.isCameraEnabled,
+  };
+}
+
+function wireRoomEvents(room) {
+  const { RoomEvent, Track } = LivekitClient;
+
+  room.on(RoomEvent.ParticipantConnected, (p) => {
+    upsertParticipant(p);
+    ensureParticipantTile(voiceParticipants[p.identity]);
+    renderVoiceParticipants();
+    if (inVoice) playJoinSound();
+  });
+
+  room.on(RoomEvent.ParticipantDisconnected, (p) => {
+    const wasIn = !!voiceParticipants[p.identity];
+    delete voiceParticipants[p.identity];
+    renderVoiceParticipants();
+    removeVideoTile(p.identity);
+    document.getElementById('vtile-p-' + p.identity)?.remove();
+    document.getElementById('vtile-screen-' + p.identity)?.remove();
+    document.getElementById('audio-' + p.identity)?.remove();
+    if (pinnedTileId && !document.getElementById(pinnedTileId)) unpinTile();
+    if (inVoice && wasIn) playLeaveSound();
+  });
+
+  room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+    if (track.kind === Track.Kind.Audio) {
+      let audio = document.getElementById('audio-' + participant.identity);
+      if (audio) track.attach(audio);
+      else {
+        audio = track.attach();
+        audio.id = 'audio-' + participant.identity;
+        document.body.appendChild(audio);
+      }
+      audio.muted = isDeafened;
+      audio.volume = Math.min(1, (vsm.spkVol || 100) / 100);
+      if (vsm.spkId && audio.setSinkId) audio.setSinkId(vsm.spkId).catch(() => {});
+      audio.play().catch(() => {});
+    }
+    if (track.kind === Track.Kind.Video) {
+      if (publication.source === Track.Source.ScreenShare) {
+        addScreenTile(participant.identity, track);
+      } else {
+        addRemoteVideoTile(participant.identity, track);
+      }
+    }
+  });
+
+  room.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+    if (track.kind === Track.Kind.Video) {
+      if (publication.source === Track.Source.ScreenShare) {
+        document.getElementById('vtile-screen-' + participant.identity)?.remove();
+      } else {
+        removeVideoTile(participant.identity);
+        const p = voiceParticipants[participant.identity];
+        if (p) ensureParticipantTile(p);
+      }
+    }
+    track.detach();
+  });
+
+  room.on(RoomEvent.TrackMuted, (publication, participant) => {
+    if (participant.isLocal) return;
+    if (publication.source === Track.Source.Microphone && voiceParticipants[participant.identity]) {
+      voiceParticipants[participant.identity].muted = true;
+      renderVoiceParticipants();
+    }
+  });
+  room.on(RoomEvent.TrackUnmuted, (publication, participant) => {
+    if (participant.isLocal) return;
+    if (publication.source === Track.Source.Microphone && voiceParticipants[participant.identity]) {
+      voiceParticipants[participant.identity].muted = false;
+      renderVoiceParticipants();
+    }
+  });
+
+  room.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
+    document.querySelectorAll('.speaking, .speaking-tile').forEach(el => el.classList.remove('speaking', 'speaking-tile'));
+    speakers.forEach(p => setParticipantSpeaking(p.identity, true));
+  });
+
+  room.on(RoomEvent.LocalTrackUnpublished, (publication) => {
+    if (publication.source === Track.Source.ScreenShare) {
+      isScreenSharing = false;
+      document.getElementById('vtile-screen-me')?.remove();
+      updateVoiceUI();
+    }
+  });
+
+  room.on(RoomEvent.Disconnected, () => {
+    if (inVoice) { showToast('Terputus dari voice', 'error'); leaveVoice(); }
+  });
+}
+
+// Inti masuk voice — asumsikan isMuted/isVideoOn sudah diset
+async function enterVoice() {
   inVoice = true;
+  stopPresencePoll();
 
   document.getElementById('voice-panel')?.classList.add('active');
   document.getElementById('ch-voice-bar').classList.add('active');
@@ -1531,34 +1587,47 @@ function enterVoice() {
 
   voiceParticipants = {};
   addMyVideoTile();
-  if (isVideoOn) updateMyVideoTile(true);
   renderVoiceParticipants();
+  updateVoiceUI();
 
-  const s = getSocket();
-  s.emit('voice:join', {
-    channelId: VOICE_ROOM_ID,
-    name: me.namaLengkap,
-    photo: me.fotoProfil || null,
-  });
-  s.emit('voice:status', { muted: isMuted, videoOn: isVideoOn });
+  try {
+    lkRoom = new LivekitClient.Room({ adaptiveStream: true, dynacast: true });
+    wireRoomEvents(lkRoom);
+
+    const { token, url } = await Voice.token(VOICE_ROOM_ID);
+    await lkRoom.connect(url, token);
+
+    lkRoom.remoteParticipants.forEach(p => {
+      upsertParticipant(p);
+      ensureParticipantTile(voiceParticipants[p.identity]);
+    });
+    renderVoiceParticipants();
+
+    await lkRoom.localParticipant.setMicrophoneEnabled(!isMuted, micCaptureOptions());
+    if (isVideoOn) {
+      await lkRoom.localParticipant.setCameraEnabled(true, camCaptureOptions());
+      updateMyVideoTile(true);
+    }
+  } catch (err) {
+    showToast('Gagal terhubung ke voice: ' + (err?.message || err), 'error');
+    leaveVoice();
+    return;
+  }
 
   updateVoiceUI();
-  startVAD();
 }
 
 function leaveVoice() {
   if (!inVoice) return;
 
-  if (socket) socket.emit('voice:leave');
+  try { lkRoom?.disconnect(); } catch (e) {}
+  lkRoom = null;
 
-  Object.keys(peerConns).forEach(sid => closePeer(sid));
-  peerConns = {};
-
-  stopVAD();
   stopBgProcessing();
-  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-  if (bgRawTrack)  { bgRawTrack.stop(); bgRawTrack = null; }
-  if (isScreenSharing) stopScreenShare();
+  bgRawTrack = null;
+  isScreenSharing = false;
+
+  document.querySelectorAll('audio[id^="audio-"]').forEach(a => a.remove());
 
   inVoice = false; isMuted = false; isDeafened = false; isVideoOn = false;
   voiceParticipants = {};
@@ -1569,21 +1638,19 @@ function leaveVoice() {
   clearCallGrid();
   renderVoiceParticipants();
   updateVoiceUI();
+  startPresencePoll();
 
-  // Di jendela popup: tutup jendela setelah keluar voice
-  if (VOICE_POPUP) { try { window.close(); } catch(e) {} }
+  if (VOICE_POPUP) { try { window.close(); } catch (e) {} }
 }
 
 function toggleCallChat() {
   const cv  = document.getElementById('call-view');
   const btn = document.getElementById('cb-chat');
   if (cv.classList.contains('call-hidden')) {
-    // Sedang di chat → kembali ke voice view
     cv.classList.remove('call-hidden');
     if (btn) btn.innerHTML = '<i class="ti ti-message"></i> Chat';
     if (btn) btn.classList.remove('on');
   } else {
-    // Sedang di voice view → sembunyikan, tampilkan chat
     cv.classList.add('call-hidden');
     if (btn) btn.innerHTML = '<i class="ti ti-video"></i> Voice';
     if (btn) btn.classList.add('on');
@@ -1597,117 +1664,56 @@ function showCallView() {
   if (btn) { btn.innerHTML = '<i class="ti ti-message"></i> Chat'; btn.classList.remove('on'); }
 }
 
-// ── Voice Activity Detection ──────────────────────────────────────────────────
-let vadCtx = null; let vadAnalyser = null; let vadFrame = null;
-let isSpeaking = false; let speakTimeout = null;
-const SPEAK_THRESHOLD = 8; // RMS threshold (0-255 scale)
-
-function startVAD() {
-  if (!localStream || vadCtx) return;
-  try {
-    vadCtx = new AudioContext();
-    const src = vadCtx.createMediaStreamSource(localStream);
-    vadAnalyser = vadCtx.createAnalyser();
-    vadAnalyser.fftSize = 512;
-    src.connect(vadAnalyser);
-    const buf = new Uint8Array(vadAnalyser.frequencyBinCount);
-
-    function tick() {
-      vadFrame = requestAnimationFrame(tick);
-      if (!vadAnalyser || isMuted) {
-        if (isSpeaking) setSpeaking(false);
-        return;
-      }
-      vadAnalyser.getByteFrequencyData(buf);
-      const rms = Math.sqrt(buf.reduce((s, v) => s + v * v, 0) / buf.length);
-      if (rms > SPEAK_THRESHOLD) {
-        clearTimeout(speakTimeout);
-        if (!isSpeaking) setSpeaking(true);
-        speakTimeout = setTimeout(() => setSpeaking(false), 350);
-      }
-    }
-    tick();
-  } catch(e) {}
-}
-
-function stopVAD() {
-  if (vadFrame) { cancelAnimationFrame(vadFrame); vadFrame = null; }
-  if (speakTimeout) { clearTimeout(speakTimeout); speakTimeout = null; }
-  if (vadCtx) { vadCtx.close(); vadCtx = null; }
-  vadAnalyser = null;
-  if (isSpeaking) setSpeaking(false);
-}
-
-function setSpeaking(val) {
-  isSpeaking = val;
-  // Update UI for self
-  setParticipantSpeaking(me._id, val);
-  // Broadcast to others
-  if (socket) socket.emit('voice:speaking', { speaking: val });
-}
-
 function setParticipantSpeaking(userId, speaking) {
   const uid = userId?.toString();
-  // Sidebar participant rows
   document.querySelectorAll(`[data-uid="${uid}"]`).forEach(el => {
     if (el.classList.contains('ch-vp-row') || el.classList.contains('voice-participant')) {
       el.classList.toggle('speaking', speaking);
     }
-    // Call grid tiles
     if (el.classList.contains('video-tile')) {
       el.classList.toggle('speaking-tile', speaking);
     }
   });
 }
 
-function toggleMute() {
+async function toggleMute() {
+  if (!inVoice) return;
   isMuted = !isMuted;
-  if (localStream) localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
-  if (isMuted && isSpeaking) setSpeaking(false);
+  try { await lkRoom?.localParticipant.setMicrophoneEnabled(!isMuted, micCaptureOptions()); } catch (e) {}
   updateVoiceUI();
-  if (socket) socket.emit('voice:status', { muted: isMuted });
 }
 
 function toggleDeafen() {
+  if (!inVoice) return;
   isDeafened = !isDeafened;
-  // Mute semua remote audio
-  Object.values(peerConns).forEach(pc => {
-    pc.getReceivers().forEach(r => { if (r.track.kind === 'audio') r.track.enabled = !isDeafened; });
-  });
-  if (isDeafened && !isMuted) { isMuted = true; if (localStream) localStream.getAudioTracks().forEach(t => t.enabled = false); }
+  document.querySelectorAll('audio[id^="audio-"]').forEach(a => a.muted = isDeafened);
+  if (isDeafened && !isMuted) {
+    isMuted = true;
+    lkRoom?.localParticipant.setMicrophoneEnabled(false).catch(() => {});
+  }
   updateVoiceUI();
-  if (socket) socket.emit('voice:status', { deafened: isDeafened, muted: isMuted });
 }
 
 async function toggleVideo() {
   if (!inVoice) return;
   isVideoOn = !isVideoOn;
-
-  if (isVideoOn) {
-    try {
-      const vidStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      const vidTrack  = vidStream.getVideoTracks()[0];
-      localStream.addTrack(vidTrack);
-      for (const [sid, pc] of Object.entries(peerConns)) {
-        const existingSender = pc.getSenders().find(s => s.track?.kind === 'video');
-        if (existingSender) {
-          await existingSender.replaceTrack(vidTrack); // no renegotiation needed
-        } else {
-          pc.addTrack(vidTrack, localStream); // onnegotiationneeded fires for offerer automatically
-        }
-      }
+  try {
+    if (isVideoOn) {
+      await lkRoom.localParticipant.setCameraEnabled(true, camCaptureOptions());
+      bgRawTrack = null; // paksa ambil ulang track kamera baru sbg sumber canvas
+      if (vsm.bgMode !== 'none') await applyBgToStream();
       updateMyVideoTile(true);
-    } catch(e) { isVideoOn = false; showToast('Tidak dapat mengakses kamera: ' + e.message, 'error'); }
-  } else {
-    const vidTracks = localStream.getVideoTracks();
-    vidTracks.forEach(t => { t.stop(); localStream.removeTrack(t); });
-    updateMyVideoTile(false);
-    // Sembunyikan grid jika tidak ada yang video on
-    // video off — tile already handled by updateMyVideoTile(false)
+    } else {
+      stopBgProcessing();
+      bgRawTrack = null;
+      await lkRoom.localParticipant.setCameraEnabled(false);
+      updateMyVideoTile(false);
+    }
+  } catch (e) {
+    isVideoOn = !isVideoOn;
+    showToast('Tidak dapat mengakses kamera: ' + e.message, 'error');
   }
-
   updateVoiceUI();
-  if (socket) socket.emit('voice:status', { videoOn: isVideoOn });
 }
 
 function updateVoiceUI() {
@@ -1715,7 +1721,6 @@ function updateVoiceUI() {
   if (bar) bar.classList.toggle('active', inVoice);
   document.getElementById('call-view')?.classList.toggle('active', inVoice);
 
-  // Sidebar mini bar buttons
   const muteBtn   = document.getElementById('vc-mute');
   const deafBtn   = document.getElementById('vc-deafen');
   const vidBtn    = document.getElementById('vc-video');
@@ -1734,7 +1739,6 @@ function updateVoiceUI() {
     screenBtn.innerHTML = `<i class="ti ${isScreenSharing ? 'ti-screen-share-off' : 'ti-screen-share'}"></i>`;
   }
 
-  // Call bar (Zoom-style) buttons
   const cbMute   = document.getElementById('cb-mute');
   const cbVideo  = document.getElementById('cb-video');
   const cbScreen = document.getElementById('cb-screen');
@@ -1759,84 +1763,25 @@ function updateVoiceUI() {
 }
 
 // ── Screen Share ──────────────────────────────────────────────────────────────
-let screenStream = null;
-let isScreenSharing = false;
-
 async function toggleScreenShare() {
-  if (!inVoice) return;
-  if (isScreenSharing) {
-    stopScreenShare();
-  } else {
-    await startScreenShare();
-  }
-}
-
-async function startScreenShare() {
+  if (!inVoice || !lkRoom) return;
+  const next = !isScreenSharing;
   try {
-    screenStream = await navigator.mediaDevices.getDisplayMedia({
-      video: { cursor: 'always' },
-      audio: false,
-    });
-  } catch(e) {
-    if (e.name !== 'NotAllowedError') showToast('Gagal share screen: ' + e.message, 'error');
-    return;
-  }
-
-  isScreenSharing = true;
-  const screenTrack = screenStream.getVideoTracks()[0];
-
-  // Kirim ke semua peer — screen share is always a new track, use addTrack
-  // onnegotiationneeded fires automatically for offerer connections
-  for (const [sid, pc] of Object.entries(peerConns)) {
-    pc.addTrack(screenTrack, screenStream);
-    // answerer peers: trigger renegotiation by having the offerer side re-offer
-    // since we can't createOffer as answerer, signal to the offerer peer to renegotiate
-    if (peerRoles[sid] === 'offerer') {
-      try {
-        const offer = await pc.createOffer();
-        if (pc.signalingState === 'stable') {
-          await pc.setLocalDescription(offer);
-          socket.emit('voice:offer', { targetSocketId: sid, offer });
-        }
-      } catch(e) {}
+    await lkRoom.localParticipant.setScreenShareEnabled(next, { audio: false });
+    isScreenSharing = next;
+    if (isScreenSharing) {
+      const pub = lkRoom.localParticipant.getTrackPublication(LivekitClient.Track.Source.ScreenShare);
+      if (pub?.track) addScreenTile('me', pub.track);
+    } else {
+      document.getElementById('vtile-screen-me')?.remove();
     }
-    // For answerer connections, onnegotiationneeded handles it automatically
+  } catch (e) {
+    if (e.name !== 'NotAllowedError') showToast('Gagal share screen: ' + e.message, 'error');
   }
-
-  // Tampilkan tile lokal dengan label "Layar Anda"
-  addScreenTile('me', screenStream);
-
-  // Saat user stop dari browser (klik Stop Sharing)
-  screenTrack.onended = () => stopScreenShare();
-
   updateVoiceUI();
 }
 
-function stopScreenShare() {
-  if (!isScreenSharing) return;
-  isScreenSharing = false;
-
-  if (screenStream) {
-    screenStream.getTracks().forEach(t => {
-      t.stop();
-      // Hapus dari semua peer
-      for (const pc of Object.values(peerConns)) {
-        const sender = pc.getSenders().find(s => s.track === t);
-        if (sender) pc.removeTrack(sender);
-      }
-    });
-    screenStream = null;
-  }
-
-  // Hapus tile layar lokal
-  document.getElementById('vtile-screen-me')?.remove();
-
-  document.getElementById('vtile-screen-me')?.remove();
-
-  updateVoiceUI();
-}
-
-function addScreenTile(id, stream) {
+function addScreenTile(id, track) {
   const grid = getCallGrid();
   const tileId = 'vtile-screen-' + id;
   let tile = document.getElementById(tileId);
@@ -1849,11 +1794,11 @@ function addScreenTile(id, stream) {
     tile.innerHTML = `
       <video autoplay muted playsinline></video>
       <div class="vt-name"><i class="ti ti-screen-share" style="margin-right:4px"></i>${id === 'me' ? 'Layar Anda' : 'Screen Share'}</div>
-      ${id === 'me' ? '<button class="vt-stop-share" onclick="event.stopPropagation();stopScreenShare()"><i class="ti ti-x"></i> Hentikan</button>' : ''}
+      ${id === 'me' ? '<button class="vt-stop-share" onclick="event.stopPropagation();toggleScreenShare()"><i class="ti ti-x"></i> Hentikan</button>' : ''}
       ${makePinBtn(tileId)}`;
     grid.appendChild(tile);
   }
-  tile.querySelector('video').srcObject = stream;
+  track.attach(tile.querySelector('video'));
   grid.classList.add('active');
 }
 
@@ -1867,9 +1812,9 @@ let vsmBgStream = null; let vsmBgAnimFrame = null;
 let micGainCtx = null; let micGainNode = null;
 
 // Background processing (canvas stream)
-let bgCanvas = null; let bgCtx2d = null; let bgSegmentation = null;
+let bgCanvas = null; let bgCtx2d = null;
 let bgProcessedStream = null; let bgAnimFrame = null; let bgVideoEl = null;
-let bgRawTrack = null; // original camera track kept alive as canvas source
+let bgRawTrack = null; // MediaStreamTrack kamera mentah, sumber canvas
 
 function switchVsmTab(tab, btn) {
   document.querySelectorAll('.vsm-tab').forEach(t => t.classList.remove('active'));
@@ -1883,7 +1828,6 @@ function switchVsmTab(tab, btn) {
 
 async function openVoiceSettings() {
   document.getElementById('voice-settings-modal').classList.add('active');
-  // Restore saved values to sliders/toggles
   const micVol = document.getElementById('vsm-mic-vol');
   const spkVol = document.getElementById('vsm-spk-vol');
   if (micVol) { micVol.value = vsm.micVol; document.getElementById('vsm-mic-vol-val').textContent = vsm.micVol + '%'; }
@@ -1891,7 +1835,6 @@ async function openVoiceSettings() {
   document.getElementById('vsm-noise').checked = vsm.noise;
   document.getElementById('vsm-echo').checked  = vsm.echo;
   document.getElementById('vsm-agc').checked   = vsm.agc;
-  // Highlight current bg
   document.querySelectorAll('.vsm-bg-card').forEach(c => c.classList.toggle('selected', c.dataset.bg === vsm.bgMode));
   await populateDevices();
   startMicPreview();
@@ -1974,7 +1917,7 @@ function applyBgToPreview(vid, container) {
   if (vsmBgAnimFrame) { cancelAnimationFrame(vsmBgAnimFrame); vsmBgAnimFrame = null; }
   const mode = vsm.bgMode;
   if (mode === 'none') { vid.style.filter = ''; return; }
-  if (mode === 'blur') { vid.style.filter = 'blur(12px)'; return; } // simple CSS blur preview
+  if (mode === 'blur') { vid.style.filter = 'blur(12px)'; return; }
   if (mode.startsWith('color:')) { vid.style.filter = ''; vid.style.display = 'none';
     const div = document.createElement('div');
     div.style.cssText = `position:absolute;inset:0;background:${mode.slice(6)}`;
@@ -2002,7 +1945,7 @@ function selectBg(mode, card) {
   startBgPreview();
 }
 
-// ── Background processing on live stream ──────────────────────────────────────
+// ── Background processing on live LiveKit camera track ─────────────────────────
 function stopBgProcessing() {
   if (bgAnimFrame) { cancelAnimationFrame(bgAnimFrame); bgAnimFrame = null; }
   if (bgProcessedStream) { bgProcessedStream.getTracks().forEach(t => t.stop()); bgProcessedStream = null; }
@@ -2010,87 +1953,72 @@ function stopBgProcessing() {
 }
 
 async function applyBgToStream() {
+  if (!isVideoOn || !inVoice || !lkRoom) { stopBgProcessing(); return; }
+
+  const mode   = vsm.bgMode;
+  const camPub = lkRoom.localParticipant.getTrackPublication(LivekitClient.Track.Source.Camera);
+  const currentTrack = camPub?.track?.mediaStreamTrack;
+  if (!bgRawTrack && currentTrack) bgRawTrack = currentTrack;
+  if (!bgRawTrack) return;
+
+  // Lepas track olahan sebelumnya (kalau ada) dari publikasi, JANGAN stop bgRawTrack (kamera mentah)
+  if (camPub && currentTrack !== bgRawTrack) {
+    await lkRoom.localParticipant.unpublishTrack(camPub.track, true).catch(() => {});
+  }
   stopBgProcessing();
 
-  const mode = vsm.bgMode;
-  if (!isVideoOn || !localStream) return;
+  let publishTrack = bgRawTrack;
 
-  // Get current video track (raw camera or previous processed)
-  const existingVidTrack = bgRawTrack || localStream.getVideoTracks()[0];
-  if (!existingVidTrack) return;
-  bgRawTrack = existingVidTrack;
+  if (mode !== 'none') {
+    bgVideoEl = document.createElement('video');
+    bgVideoEl.srcObject = new MediaStream([bgRawTrack]);
+    bgVideoEl.autoplay = bgVideoEl.muted = bgVideoEl.playsInline = true;
+    await new Promise(r => { bgVideoEl.onloadedmetadata = r; });
+    await bgVideoEl.play().catch(() => {});
 
-  if (mode === 'none') {
-    // Restore raw camera track to peers
-    for (const pc of Object.values(peerConns)) {
-      const sender = pc.getSenders().find(s => s.track?.kind === 'video');
-      if (sender && bgRawTrack) await sender.replaceTrack(bgRawTrack).catch(() => {});
+    bgCanvas = document.createElement('canvas');
+    bgCanvas.width  = bgVideoEl.videoWidth  || 640;
+    bgCanvas.height = bgVideoEl.videoHeight || 480;
+    bgCtx2d = bgCanvas.getContext('2d');
+
+    let bgImg = null;
+    if (mode === 'upload' && vsm.bgImageSrc) {
+      bgImg = new Image();
+      bgImg.src = vsm.bgImageSrc;
+      await new Promise(r => { bgImg.onload = r; bgImg.onerror = r; });
     }
-    // Ensure localStream has raw track
-    localStream.getVideoTracks().forEach(t => { if (t !== bgRawTrack) { t.stop(); localStream.removeTrack(t); } });
-    if (!localStream.getVideoTracks().includes(bgRawTrack)) localStream.addTrack(bgRawTrack);
-    updateMyVideoTile(true);
-    return;
+
+    const draw = () => {
+      if (!bgCtx2d) return;
+      bgAnimFrame = requestAnimationFrame(draw);
+      const w = bgCanvas.width, h = bgCanvas.height;
+
+      if (mode === 'blur') {
+        bgCtx2d.filter = 'blur(12px)';
+        bgCtx2d.drawImage(bgVideoEl, 0, 0, w, h);
+        bgCtx2d.filter = 'none';
+      } else if (mode.startsWith('color:')) {
+        bgCtx2d.fillStyle = mode.slice(6);
+        bgCtx2d.fillRect(0, 0, w, h);
+        bgCtx2d.globalAlpha = 0.82;
+        bgCtx2d.drawImage(bgVideoEl, 0, 0, w, h);
+        bgCtx2d.globalAlpha = 1;
+      } else if (mode === 'upload' && bgImg) {
+        bgCtx2d.drawImage(bgImg, 0, 0, w, h);
+        bgCtx2d.globalAlpha = 0.82;
+        bgCtx2d.drawImage(bgVideoEl, 0, 0, w, h);
+        bgCtx2d.globalAlpha = 1;
+      } else {
+        bgCtx2d.drawImage(bgVideoEl, 0, 0, w, h);
+      }
+    };
+    draw();
+
+    bgProcessedStream = bgCanvas.captureStream(30);
+    publishTrack = bgProcessedStream.getVideoTracks()[0];
   }
 
-  // Build video element for canvas source
-  bgVideoEl = document.createElement('video');
-  bgVideoEl.srcObject = new MediaStream([bgRawTrack]);
-  bgVideoEl.autoplay = bgVideoEl.muted = bgVideoEl.playsInline = true;
-  await new Promise(r => { bgVideoEl.onloadedmetadata = r; });
-
-  bgCanvas = document.createElement('canvas');
-  bgCanvas.width  = bgVideoEl.videoWidth  || 640;
-  bgCanvas.height = bgVideoEl.videoHeight || 480;
-  bgCtx2d = bgCanvas.getContext('2d');
-
-  let bgImg = null;
-  if (mode === 'upload' && vsm.bgImageSrc) {
-    bgImg = new Image();
-    bgImg.src = vsm.bgImageSrc;
-    await new Promise(r => { bgImg.onload = r; bgImg.onerror = r; });
-  }
-
-  const draw = () => {
-    if (!bgCtx2d) return;
-    bgAnimFrame = requestAnimationFrame(draw);
-    const w = bgCanvas.width, h = bgCanvas.height;
-
-    if (mode === 'blur') {
-      bgCtx2d.filter = 'blur(12px)';
-      bgCtx2d.drawImage(bgVideoEl, 0, 0, w, h);
-      bgCtx2d.filter = 'none';
-    } else if (mode.startsWith('color:')) {
-      bgCtx2d.fillStyle = mode.slice(6);
-      bgCtx2d.fillRect(0, 0, w, h);
-      bgCtx2d.globalAlpha = 0.82;
-      bgCtx2d.drawImage(bgVideoEl, 0, 0, w, h);
-      bgCtx2d.globalAlpha = 1;
-    } else if (mode === 'upload' && bgImg) {
-      bgCtx2d.drawImage(bgImg, 0, 0, w, h);
-      bgCtx2d.globalAlpha = 0.82;
-      bgCtx2d.drawImage(bgVideoEl, 0, 0, w, h);
-      bgCtx2d.globalAlpha = 1;
-    } else {
-      bgCtx2d.drawImage(bgVideoEl, 0, 0, w, h);
-    }
-  };
-  draw();
-
-  bgProcessedStream = bgCanvas.captureStream(30);
-  const processedTrack = bgProcessedStream.getVideoTracks()[0];
-
-  // Replace video track in localStream with processed track
-  localStream.getVideoTracks().forEach(t => { if (t !== bgRawTrack) { t.stop(); localStream.removeTrack(t); } });
-  localStream.getVideoTracks().forEach(t => { if (t === bgRawTrack) localStream.removeTrack(t); }); // raw track stays in bgVideoEl only
-  localStream.addTrack(processedTrack);
-
-  // Replace in all peers
-  for (const pc of Object.values(peerConns)) {
-    const sender = pc.getSenders().find(s => s.track?.kind === 'video');
-    if (sender) await sender.replaceTrack(processedTrack).catch(() => {});
-  }
-
+  await lkRoom.localParticipant.publishTrack(publishTrack, { source: LivekitClient.Track.Source.Camera });
   updateMyVideoTile(true);
 }
 
@@ -2102,7 +2030,6 @@ function loadBgUpload(input) {
     vsm.bgMode = 'upload';
     document.querySelectorAll('.vsm-bg-card').forEach(c => c.classList.remove('selected'));
     const card = input.closest('.vsm-bg-card'); if (card) { card.classList.add('selected'); card.dataset.bg = 'upload'; }
-    // Show thumbnail in card
     if (card) { card.style.backgroundImage = `url(${e.target.result})`; card.style.backgroundSize = 'cover'; }
     startBgPreview();
   };
@@ -2119,165 +2046,47 @@ async function applyVoiceSettings() {
   vsm.echo   = document.getElementById('vsm-echo')?.checked  ?? true;
   vsm.agc    = document.getElementById('vsm-agc')?.checked   ?? true;
 
-  // ── Output volume ──
+  // ── Output volume & speaker device ──
   const spkVol = vsm.spkVol / 100;
-  document.querySelectorAll('audio').forEach(async el => {
+  document.querySelectorAll('audio[id^="audio-"]').forEach(async el => {
     el.volume = Math.min(1, spkVol);
     if (vsm.spkId && el.setSinkId) try { await el.setSinkId(vsm.spkId); } catch(e) {}
   });
 
-  if (inVoice) {
-    // ── Re-acquire mic with new constraints & gain ──
+  if (inVoice && lkRoom) {
     try {
-      const constraints = {
-        audio: {
-          deviceId: vsm.micId ? { exact: vsm.micId } : undefined,
-          noiseSuppression: vsm.noise,
-          echoCancellation: vsm.echo,
-          autoGainControl:  vsm.agc,
-        }
-      };
-      const rawStream = await navigator.mediaDevices.getUserMedia(constraints);
-      const rawTrack  = rawStream.getAudioTracks()[0];
+      if (vsm.micVol !== 100) {
+        // Volume mic di-boost/kecilkan lewat Web Audio gain chain, lalu publish sbg track baru
+        const rawStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            deviceId: vsm.micId ? { exact: vsm.micId } : undefined,
+            noiseSuppression: vsm.noise, echoCancellation: vsm.echo, autoGainControl: vsm.agc,
+          }
+        });
+        if (micGainCtx) micGainCtx.close().catch(() => {});
+        micGainCtx  = new AudioContext();
+        const src   = micGainCtx.createMediaStreamSource(rawStream);
+        micGainNode = micGainCtx.createGain();
+        micGainNode.gain.value = vsm.micVol / 100;
+        const dest  = micGainCtx.createMediaStreamDestination();
+        src.connect(micGainNode); micGainNode.connect(dest);
+        const gainedTrack = dest.stream.getAudioTracks()[0];
 
-      // Apply gain via Web Audio chain → MediaStreamDestination
-      if (micGainCtx) micGainCtx.close().catch(()=>{});
-      micGainCtx  = new AudioContext();
-      const src   = micGainCtx.createMediaStreamSource(rawStream);
-      micGainNode = micGainCtx.createGain();
-      micGainNode.gain.value = vsm.micVol / 100;
-      const dest  = micGainCtx.createMediaStreamDestination();
-      src.connect(micGainNode); micGainNode.connect(dest);
-      const gainedTrack = dest.stream.getAudioTracks()[0];
-
-      // Replace in localStream
-      localStream?.getAudioTracks().forEach(t => { t.stop(); localStream.removeTrack(t); });
-      localStream?.addTrack(gainedTrack);
-
-      // Replace in all peer senders
-      for (const pc of Object.values(peerConns)) {
-        const sender = pc.getSenders().find(s => s.track?.kind === 'audio');
-        if (sender) await sender.replaceTrack(gainedTrack);
+        const micPub = lkRoom.localParticipant.getTrackPublication(LivekitClient.Track.Source.Microphone);
+        if (micPub) await lkRoom.localParticipant.unpublishTrack(micPub.track, true).catch(() => {});
+        if (!isMuted) await lkRoom.localParticipant.publishTrack(gainedTrack, { source: LivekitClient.Track.Source.Microphone });
+      } else if (!isMuted) {
+        // Volume normal — cukup re-enable mic dengan constraint baru (device/noise-suppression dll)
+        await lkRoom.localParticipant.setMicrophoneEnabled(true, micCaptureOptions());
       }
-
-      // Restart VAD on the raw stream (before gain)
-      stopVAD(); startVAD();
     } catch(e) { showToast('Gagal menerapkan pengaturan mic: ' + e.message, 'error'); }
-  }
 
-  // Apply background to live stream
-  if (inVoice) await applyBgToStream().catch(() => {});
+    // Terapkan virtual background ke stream yang sedang live
+    if (isVideoOn) await applyBgToStream().catch(() => {});
+  }
 
   closeVoiceSettings();
   showToast('Pengaturan diterapkan');
-}
-
-// ── WebRTC Peer ────────────────────────────────────────────────────────────────
-const ICE_SERVERS = { iceServers: [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' },
-  // Free public TURN — untuk koneksi di balik NAT/firewall VPS
-  { urls: 'turn:openrelay.metered.ca:80',  username: 'openrelayproject', credential: 'openrelayproject' },
-  { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-] };
-
-function getOrCreatePeer(socketId, userId) {
-  if (peerConns[socketId]) return peerConns[socketId];
-  return createPeer(socketId, userId);
-}
-
-function createPeer(socketId, userId) {
-  const pc = new RTCPeerConnection(ICE_SERVERS);
-  peerConns[socketId] = pc;
-
-  if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-
-  // Offerer handles renegotiation automatically via onnegotiationneeded
-  let makingOffer = false;
-  pc.onnegotiationneeded = async () => {
-    if (peerRoles[socketId] !== 'offerer') return; // answerer never creates offer
-    if (makingOffer) return;
-    try {
-      makingOffer = true;
-      const offer = await pc.createOffer();
-      if (pc.signalingState !== 'stable') return;
-      await pc.setLocalDescription(offer);
-      socket.emit('voice:offer', { targetSocketId: socketId, offer });
-    } catch(e) {} finally { makingOffer = false; }
-  };
-
-  pc.onicecandidate = ({ candidate }) => {
-    if (candidate) socket.emit('voice:ice', { targetSocketId: socketId, candidate });
-  };
-
-  pc.ontrack = ({ streams, track }) => {
-    if (track.kind === 'audio') {
-      let audio = document.getElementById('audio-' + socketId);
-      if (!audio) {
-        audio = document.createElement('audio');
-        audio.id = 'audio-' + socketId;
-        audio.autoplay = true;
-        audio.playsInline = true;
-        document.body.appendChild(audio);
-      }
-      audio.srcObject = streams[0];
-      audio.muted = isDeafened;
-      // Apply output volume & device
-      audio.volume = Math.min(1, (vsm.spkVol || 100) / 100);
-      if (vsm.spkId && audio.setSinkId) audio.setSinkId(vsm.spkId).catch(()=>{});
-      // Force play — browser may block autoplay
-      audio.play().catch(() => {});
-    }
-    if (track.kind === 'video') {
-      // Jangan buat tile sekarang — tunggu track benar-benar punya konten
-      // (onunmute = track mulai terima data nyata, bukan black/empty frame)
-      const stream = streams[0];
-
-      track.onunmute = () => {
-        const existingVid = document.getElementById('vtile-' + socketId);
-        if (existingVid) {
-          // Sudah ada tile kamera — kemungkinan ini screen share (track kedua)
-          addScreenTile(socketId + '-screen', stream);
-        } else {
-          addRemoteVideoTile(socketId, userId, stream);
-        }
-      };
-
-      track.onmute = () => {
-        // Kamera mati — hapus video tile, kembalikan avatar
-        removeVideoTile(socketId);
-        document.getElementById('vtile-screen-' + socketId + '-screen')?.remove();
-        const p = voiceParticipants[userId];
-        if (p) ensureParticipantTile(p);
-      };
-
-      // Kalau track langsung aktif (tidak perlu tunggu unmute)
-      if (!track.muted) track.onunmute();
-    }
-  };
-
-  pc.onconnectionstatechange = () => {
-    if (['disconnected','failed','closed'].includes(pc.connectionState)) closePeer(socketId);
-  };
-
-  return pc;
-}
-
-async function createOffer(targetSocketId) {
-  peerRoles[targetSocketId] = 'offerer';
-  const pc    = getOrCreatePeer(targetSocketId, null);
-  const offer = await pc.createOffer();
-  await pc.setLocalDescription(offer);
-  socket.emit('voice:offer', { targetSocketId, offer });
-}
-
-function closePeer(socketId) {
-  const pc = peerConns[socketId];
-  if (pc) { pc.close(); delete peerConns[socketId]; }
-  delete peerRoles[socketId];
-  const audio = document.getElementById('audio-' + socketId);
-  if (audio) audio.remove();
 }
 
 // ── Call grid helpers ──────────────────────────────────────────────────────────
@@ -2294,13 +2103,8 @@ function clearCallGrid() {
 let pinnedTileId = null;
 
 function pinTile(tileId) {
-  if (pinnedTileId === tileId) {
-    unpinTile(); return;
-  }
-  // Unpin previous
-  if (pinnedTileId) {
-    document.getElementById(pinnedTileId)?.classList.remove('pinned-tile');
-  }
+  if (pinnedTileId === tileId) { unpinTile(); return; }
+  if (pinnedTileId) document.getElementById(pinnedTileId)?.classList.remove('pinned-tile');
   pinnedTileId = tileId;
   document.getElementById(tileId)?.classList.add('pinned-tile');
   enterSpotlight(tileId);
@@ -2320,21 +2124,17 @@ function enterSpotlight(tileId) {
   const pinnedEl = document.getElementById(tileId);
   if (!pinnedEl) return;
 
-  // PENTING: tangkap semua tile DULU sebelum mengosongkan grid,
-  // agar referensinya tidak hilang (bug: peserta lain & diri sendiri ikut hilang).
   const allTiles = [...grid.querySelectorAll('.video-tile')];
 
   grid.classList.add('spotlight-mode');
   grid.innerHTML = '';
 
-  // Main slot
   const mainWrap = document.createElement('div');
   mainWrap.className = 'call-spotlight-main';
   mainWrap.id = 'spotlight-main';
   mainWrap.appendChild(pinnedEl);
   grid.appendChild(mainWrap);
 
-  // Strip of others
   const strip = document.createElement('div');
   strip.className = 'call-strip';
   strip.id = 'call-strip';
@@ -2345,8 +2145,6 @@ function enterSpotlight(tileId) {
 function exitSpotlight() {
   const grid = getCallGrid();
   if (!grid) return;
-
-  // Tangkap semua tile (di main + strip) sebelum membersihkan
   const tiles = [...grid.querySelectorAll('.video-tile')];
   grid.classList.remove('spotlight-mode');
   grid.innerHTML = '';
@@ -2354,7 +2152,6 @@ function exitSpotlight() {
   layoutGrid();
 }
 
-// Auto-resize grid agar pas satu layar (Google Meet style)
 function layoutGrid() {
   const grid = getCallGrid();
   if (!grid || grid.classList.contains('spotlight-mode')) return;
@@ -2364,7 +2161,6 @@ function layoutGrid() {
   grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 }
 
-// Pantau perubahan jumlah tile → atur ulang kolom otomatis
 (function initGridAutoLayout() {
   const grid = getCallGrid();
   if (!grid) return;
@@ -2390,14 +2186,13 @@ function _playTones(freqs) {
         gain.gain.linearRampToValueAtTime(0, t + 0.16);
         osc.start(t); osc.stop(t + 0.22);
       });
-      // Auto-close context after sounds finish
       setTimeout(() => ctx.close(), (freqs.length * 0.14 + 0.3) * 1000);
     });
   } catch(e) {}
 }
 
-function playJoinSound()  { _playTones([440, 550]); } // naik — ada yang masuk
-function playLeaveSound() { _playTones([550, 400]); } // turun — ada yang keluar
+function playJoinSound()  { _playTones([440, 550]); }
+function playLeaveSound() { _playTones([550, 400]); }
 
 // ── Video tiles ────────────────────────────────────────────────────────────────
 function makePinBtn(tileId) {
@@ -2430,10 +2225,11 @@ function updateMyVideoTile(show) {
   const av  = document.getElementById('vtile-me-avatar');
   if (!vid) return;
   if (show) {
-    const vidTrack = localStream?.getVideoTracks()[0];
-    if (vidTrack) {
-      vid.srcObject = new MediaStream([vidTrack]);
+    const pub = lkRoom?.localParticipant?.getTrackPublication(LivekitClient.Track.Source.Camera);
+    if (pub?.videoTrack) {
+      pub.videoTrack.attach(vid);
       vid.style.display = 'block';
+      vid.style.transform = 'scaleX(-1)';
       vid.play().catch(() => {});
       if (av) av.style.display = 'none';
     }
@@ -2444,12 +2240,12 @@ function updateMyVideoTile(show) {
   }
 }
 
-function addRemoteVideoTile(socketId, userId, stream) {
-  const tileId = 'vtile-' + socketId;
-  // Cegah duplikat
-  if (document.getElementById(tileId)) return;
+function addRemoteVideoTile(userId, track) {
+  const tileId = 'vtile-' + userId;
+  const existing = document.getElementById(tileId);
+  if (existing) { track.attach(existing.querySelector('video')); return; }
 
-  const p    = Object.values(voiceParticipants).find(x => x.socketId === socketId || x.userId === userId) || {};
+  const p    = voiceParticipants[userId] || {};
   const name = p.name || 'User';
   const inits = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
   const avColors = ['#0E7C91','#16A34A','#EA580C','#0D9488','#DB2777'];
@@ -2467,14 +2263,13 @@ function addRemoteVideoTile(socketId, userId, stream) {
     ${makePinBtn(tileId)}`;
 
   const vid = tile.querySelector('video');
-  vid.srcObject = stream;
+  track.attach(vid);
   vid.onloadedmetadata = () => {
     vid.style.display = 'block';
     tile.querySelector('.vt-avatar').style.display = 'none';
     vid.play().catch(() => {});
   };
 
-  // Ganti avatar-only tile jika ada (agar tidak duplikat)
   const avatarTile = document.getElementById('vtile-p-' + userId);
   if (avatarTile) {
     avatarTile.replaceWith(tile);
@@ -2489,9 +2284,10 @@ function addRemoteVideoTile(socketId, userId, stream) {
 // Tile peserta yg tidak ada video (avatar-only) — dibuat saat mereka join
 function ensureParticipantTile(p) {
   const grid = getCallGrid();
-  if (!grid) return;
+  if (!grid || !p) return;
   const id = 'vtile-p-' + p.userId;
   if (document.getElementById(id)) return;
+  if (document.getElementById('vtile-' + p.userId)) return; // sudah ada video tile
   const inits = (p.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
   const avColors = ['#0E7C91','#16A34A','#EA580C','#0D9488','#DB2777'];
   const avColor  = avColors[inits.charCodeAt(0) % avColors.length];
@@ -2506,14 +2302,13 @@ function ensureParticipantTile(p) {
     <div class="vt-name">${escHtml(p.name)}</div>
     ${p.muted ? '<div class="vt-mic-off"><i class="ti ti-microphone-off"></i></div>' : ''}
     ${makePinBtn(id)}`;
-  // Masukkan ke strip jika spotlight aktif, jika tidak ke grid biasa
   const strip = document.getElementById('call-strip');
   if (strip) strip.appendChild(tile);
   else grid.appendChild(tile);
 }
 
-function removeVideoTile(socketId) {
-  document.getElementById('vtile-' + socketId)?.remove();
+function removeVideoTile(userId) {
+  document.getElementById('vtile-' + userId)?.remove();
 }
 
 // ── Render voice participants ──────────────────────────────────────────────────
@@ -2523,7 +2318,6 @@ function renderVoiceParticipants() {
     ? [{ userId: me._id, name: me.namaLengkap, photo: me.fotoProfil, muted: isMuted, deafened: isDeafened, videoOn: isVideoOn, isSelf: true }, ...list.filter(p => p.userId !== me._id)]
     : list;
 
-  // Render di voice-panel dalam chat area
   const el    = document.getElementById('voice-participants');
   const count = document.getElementById('voice-count');
   if (el) {
@@ -2544,7 +2338,6 @@ function renderVoiceParticipants() {
     }).join('');
   }
 
-  // Render di left panel (bawah voice channel item)
   const lpEl = document.getElementById('voice-ch-participants');
   if (lpEl) {
     lpEl.innerHTML = allParts.map(p => {
@@ -2561,24 +2354,23 @@ function renderVoiceParticipants() {
   }
 }
 
+startPresencePoll();
+
 // Stop semua stream aktif saat halaman ditutup/navigasi (cegah kamera tetap nyala)
 window.addEventListener('beforeunload', () => {
-  try { socket?.emit('voice:leave'); } catch(e) {}
-  try { localStream?.getTracks().forEach(t => t.stop()); } catch(e) {}
+  try { lkRoom?.disconnect(); } catch(e) {}
   try { lobbyStream?.getTracks().forEach(t => t.stop()); } catch(e) {}
   try { vsmStream?.getTracks().forEach(t => t.stop()); } catch(e) {}
   try { vsmBgStream?.getTracks().forEach(t => t.stop()); } catch(e) {}
-  try { bgRawTrack?.stop(); } catch(e) {}
   try { bgProcessedStream?.getTracks().forEach(t => t.stop()); } catch(e) {}
-  try { screenStream?.getTracks().forEach(t => t.stop()); } catch(e) {}
 });
 
 // ── Mode popup: jendela khusus voice (hanya call-view + lobby) ─────────────────
 if (VOICE_POPUP) {
   document.body.classList.add('voice-popup-mode');
   document.title = 'Voice — General Voice';
-  getSocket();   // pastikan socket terbuka
-  showLobby();   // tampilkan lobby preview di dalam popup
+  getSocket();
+  showLobby();
 }
 </script>
 </body>

@@ -60,6 +60,7 @@ app.use('/api/push',         require('./routes/push'));
 app.use('/api/audit',        require('./routes/audit'));
 app.use('/api/channels',     require('./routes/channels'));
 app.use('/api/dm',           require('./routes/dm'));
+app.use('/api/voice',        require('./routes/voice'));
 app.use('/api/tasks/:taskId/messages', require('./routes/task-messages'));
 
 // Root → redirect ke login

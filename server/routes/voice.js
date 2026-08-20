@@ -1,0 +1,50 @@
+const router = require('express').Router();
+const { AccessToken, RoomServiceClient } = require('livekit-server-sdk');
+const auth = require('../middleware/auth');
+
+function getRoomService() {
+  if (!process.env.LIVEKIT_URL || !process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET) return null;
+  return new RoomServiceClient(process.env.LIVEKIT_URL, process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET);
+}
+
+// GET /api/voice/token?room=general — token akses LiveKit untuk voice/video call
+router.get('/token', auth, async (req, res) => {
+  if (!process.env.LIVEKIT_URL || !process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET) {
+    return res.status(503).json({ message: 'Voice belum dikonfigurasi di server' });
+  }
+
+  const room = (req.query.room || 'general').toString().slice(0, 100).replace(/[^a-zA-Z0-9_-]/g, '');
+  if (!room) return res.status(400).json({ message: 'Room tidak valid' });
+
+  const at = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, {
+    identity: req.user._id.toString(),
+    name: req.user.namaLengkap,
+    metadata: JSON.stringify({ fotoProfil: req.user.fotoProfil || null }),
+    ttl: '6h',
+  });
+  at.addGrant({ roomJoin: true, room, canPublish: true, canSubscribe: true, canPublishData: true });
+
+  const token = await at.toJwt();
+  res.json({ token, url: process.env.LIVEKIT_URL, room });
+});
+
+// GET /api/voice/participants?room=general — roster peserta voice (untuk preview sebelum join)
+router.get('/participants', auth, async (req, res) => {
+  const rsc = getRoomService();
+  if (!rsc) return res.json([]);
+
+  const room = (req.query.room || 'general').toString().slice(0, 100).replace(/[^a-zA-Z0-9_-]/g, '');
+  try {
+    const participants = await rsc.listParticipants(room);
+    res.json(participants.map(p => {
+      let meta = {};
+      try { meta = JSON.parse(p.metadata || '{}'); } catch {}
+      const audioTrack = p.tracks.find(t => t.type === 0); // 0 = TrackType.AUDIO
+      return { userId: p.identity, name: p.name, photo: meta.fotoProfil || null, muted: audioTrack ? !!audioTrack.muted : true };
+    }));
+  } catch {
+    res.json([]); // room belum ada / belum ada yang join
+  }
+});
+
+module.exports = router;
