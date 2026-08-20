@@ -175,6 +175,7 @@ const Direktorat = {
   async list() { return apiFetch('/direktorat'); },
   async create(data) { return apiFetch('/direktorat', { method: 'POST', body: JSON.stringify(data) }); },
   async update(id, data) { return apiFetch(`/direktorat/${id}`, { method: 'PUT', body: JSON.stringify(data) }); },
+  async delete(id) { return apiFetch(`/direktorat/${id}`, { method: 'DELETE' }); },
 };
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────

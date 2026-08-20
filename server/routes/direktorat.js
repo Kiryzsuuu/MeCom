@@ -1,5 +1,6 @@
 const router     = require('express').Router();
 const Direktorat = require('../models/Direktorat');
+const User       = require('../models/User');
 const auth       = require('../middleware/auth');
 const { requireRole } = require('../middleware/roles');
 
@@ -22,6 +23,17 @@ router.put('/:id', auth, requireRole('sekretaris_coe'), async (req, res) => {
   const d = await Direktorat.findByIdAndUpdate(req.params.id, req.body, { new: true });
   if (!d) return res.status(404).json({ message: 'Direktorat tidak ditemukan' });
   res.json(d);
+});
+
+// DELETE /api/direktorat/:id
+router.delete('/:id', auth, requireRole('sekretaris_coe'), async (req, res) => {
+  const inUse = await User.countDocuments({ direktoratId: req.params.id });
+  if (inUse > 0) {
+    return res.status(400).json({ message: `Direktorat masih dipakai oleh ${inUse} pengguna, tidak bisa dihapus` });
+  }
+  const d = await Direktorat.findByIdAndDelete(req.params.id);
+  if (!d) return res.status(404).json({ message: 'Direktorat tidak ditemukan' });
+  res.json({ message: 'Direktorat dihapus' });
 });
 
 module.exports = router;

@@ -242,6 +242,9 @@
       <input type="text" id="dm-kode" placeholder="Contoh: AKD" style="text-transform:uppercase">
     </div>
     <div class="modal-footer">
+      <button class="btn" id="dm-btn-delete" style="display:none;color:var(--red);border-color:var(--red)" onclick="deleteDirektorat()">
+        <i class="ti ti-trash"></i> Hapus
+      </button>
       <button class="btn" onclick="closeDirModal()">Batal</button>
       <button class="btn btn-primary" id="dm-btn" onclick="saveDirektorat()">
         <i class="ti ti-check"></i> Simpan
@@ -417,6 +420,7 @@ function openDirModal(id) {
   editDirId = id || null;
   document.getElementById('dir-modal-title').textContent = id ? 'Edit Direktorat' : 'Tambah Direktorat';
   document.getElementById('dm-btn').innerHTML = id ? '<i class="ti ti-check"></i> Simpan' : '<i class="ti ti-plus"></i> Tambah';
+  document.getElementById('dm-btn-delete').style.display = id ? '' : 'none';
 
   if (id) {
     const d = dirs.find(x => x._id === id);
@@ -446,6 +450,22 @@ async function saveDirektorat() {
     await reloadDirektorat();
   } catch (err) {
     showToast(err.message || 'Gagal menyimpan direktorat', 'error');
+  }
+}
+
+async function deleteDirektorat() {
+  if (!editDirId) return;
+  const d = dirs.find(x => x._id === editDirId);
+  const ok = await showConfirm(`Hapus direktorat "${d ? d.nama : ''}"? Tindakan ini tidak bisa dibatalkan.`, { title: 'Hapus Direktorat', okLabel: 'Hapus', type: 'danger' });
+  if (!ok) return;
+
+  try {
+    await Direktorat.delete(editDirId);
+    showToast('Direktorat dihapus');
+    closeDirModal();
+    await reloadDirektorat();
+  } catch (err) {
+    showToast(err.message || 'Gagal menghapus direktorat', 'error');
   }
 }
 
