@@ -110,6 +110,29 @@
     .dm-no-chat { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; color: var(--text-3); }
     .dm-no-chat i { font-size: 48px; opacity: .4; }
 
+    /* Modal (generik, dipakai contact picker) */
+    .modal-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,.45);
+      backdrop-filter:blur(4px); z-index:999;
+      display:flex; align-items:center; justify-content:center; padding:20px;
+    }
+    .modal {
+      background:var(--surface); border:0.5px solid var(--border);
+      border-radius:var(--r-xl); padding:28px; width:100%; max-width:480px;
+      display:flex; flex-direction:column; gap:16px;
+      box-shadow:var(--shadow-lg);
+    }
+    .modal-title { font-size:17px; font-weight:700; }
+    .field { display:flex; flex-direction:column; gap:6px; }
+    .field label { font-size:12px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:.5px; }
+    .field input, .field select {
+      background:var(--surface-2); border:0.5px solid var(--border);
+      border-radius:var(--r-sm); padding:10px 13px;
+      font-size:14px; color:var(--text); outline:none; transition:var(--transition);
+    }
+    .field input:focus, .field select:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim); }
+    .modal-footer { display:flex; gap:8px; justify-content:flex-end; padding-top:4px; }
+
     /* ── New chat modal (contact picker) ── */
     .dm-picker-item {
       display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px;
