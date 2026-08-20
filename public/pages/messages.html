@@ -479,9 +479,11 @@ async function sendMessage() {
 
   try {
     const msg = await DM.sendMessage(activeConvId, isi);
-    messages.push(msg);
-    renderMessages();
-    scrollToBottom();
+    if (!messages.some(m => m._id === msg._id)) {
+      messages.push(msg);
+      renderMessages();
+      scrollToBottom();
+    }
 
     const c = conversations.find(x => x._id === activeConvId);
     if (c) { c.lastMessage = isi.slice(0, 200); c.lastMessageAt = msg.createdAt; c.lastSenderId = me._id; }
