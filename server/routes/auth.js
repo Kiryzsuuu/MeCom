@@ -110,12 +110,12 @@ router.post('/forgot-password', async (req, res) => {
         <!DOCTYPE html><html><head><meta charset="UTF-8">
         <style>body{font-family:-apple-system,Arial,sans-serif;background:#F2F2F5;margin:0;padding:20px}
         .wrap{max-width:480px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden}
-        .hdr{background:#18181B;padding:18px 24px}.hdr h1{color:#fff;margin:0;font-size:15px}
-        .hdr span{color:#5B4FE8}.body{padding:28px;color:#18181B;font-size:14px;line-height:1.6}
-        .otp{font-size:36px;font-weight:800;letter-spacing:8px;color:#5B4FE8;text-align:center;padding:20px;background:#F0EFFE;border-radius:10px;margin:20px 0}
+        .hdr{background:#0E7C91;padding:18px 24px}.hdr h1{color:#fff;margin:0;font-size:15px}
+        .hdr span{color:#F5821F}.body{padding:28px;color:#18181B;font-size:14px;line-height:1.6}
+        .otp{font-size:36px;font-weight:800;letter-spacing:8px;color:#0E7C91;text-align:center;padding:20px;background:#E4F3F5;border-radius:10px;margin:20px 0}
         .ftr{padding:14px 24px;background:#F7F7F9;font-size:12px;color:#71717A}</style></head>
         <body><div class="wrap">
-        <div class="hdr"><h1>In<span>track</span></h1></div>
+        <div class="hdr"><h1>Work<span>Pulse</span></h1></div>
         <div class="body">
           <p>Halo <strong>${user.namaLengkap}</strong>,</p>
           <p>Gunakan kode OTP berikut untuk mereset password Anda:</p>

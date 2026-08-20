@@ -64,23 +64,23 @@ function emailLayout(title, body) {
   <style>
     body { font-family: -apple-system, Arial, sans-serif; background: #F2F2F5; margin: 0; padding: 20px; }
     .wrap { max-width: 560px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; }
-    .hdr  { background: #18181B; padding: 20px 28px; }
+    .hdr  { background: #0E7C91; padding: 20px 28px; }
     .hdr h1 { color: #fff; margin: 0; font-size: 16px; }
-    .hdr span { color: #5B4FE8; }
+    .hdr span { color: #F5821F; }
     .body { padding: 28px; color: #18181B; font-size: 14px; line-height: 1.6; }
     .body h2 { font-size: 16px; margin: 0 0 12px; }
     .pill { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 12px; font-weight: 600; }
-    .pill-purple { background: #EDE9FE; color: #4C1D95; }
-    .pill-orange { background: #FFF7ED; color: #9A3412; }
+    .pill-purple { background: #E4F3F5; color: #0A6275; }
+    .pill-orange { background: #FEF1E4; color: #9A3412; }
     .pill-green  { background: #DCFCE7; color: #166534; }
     .pill-red    { background: #FEF2F2; color: #991B1B; }
-    .btn { display: inline-block; background: #5B4FE8; color: #fff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px; margin-top: 16px; }
+    .btn { display: inline-block; background: #0E7C91; color: #fff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px; margin-top: 16px; }
     .ftr { padding: 16px 28px; background: #F7F7F9; font-size: 12px; color: #71717A; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="hdr"><h1>In<span>track</span></h1></div>
+    <div class="hdr"><h1>Work<span>Pulse</span></h1></div>
     <div class="body">
       <h2>${title}</h2>
       ${body}
@@ -167,7 +167,7 @@ async function mailPasswordReset(user, tempPassword) {
     html: emailLayout('Reset Password', `
       <p>Halo <strong>${user.namaLengkap}</strong>,</p>
       <p>Password Anda telah direset. Berikut password sementara Anda:</p>
-      <p style="font-size:20px;font-weight:700;letter-spacing:2px;color:#5B4FE8">${tempPassword}</p>
+      <p style="font-size:20px;font-weight:700;letter-spacing:2px;color:#0E7C91">${tempPassword}</p>
       <p>Segera login dan ganti password Anda.</p>
       <a href="${process.env.APP_URL}" class="btn">Login Sekarang</a>
     `),
