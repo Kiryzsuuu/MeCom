@@ -32,6 +32,12 @@ function initSocket(server) {
     socket.on('ch:leave', ({ channelId }) => {
       if (channelId) socket.leave(`ch:${channelId}`);
     });
+    socket.on('ch:typing', ({ channelId }) => {
+      if (!channelId) return;
+      socket.to(`ch:${channelId}`).emit('channel:typing', {
+        channelId, userId: socket.userId, name: socket.userName,
+      });
+    });
 
     // ── Task chat room ────────────────────────────────────────────────────────
     socket.on('task:join', ({ taskId }) => {

@@ -1,13 +1,16 @@
 const router         = require('express').Router();
+const path           = require('path');
 const Channel        = require('../models/Channel');
 const ChannelMessage = require('../models/ChannelMessage');
 const User           = require('../models/User');
 const auth           = require('../middleware/auth');
 const { TOP_TIER_ROLES } = require('../middleware/roles');
 const { getIO }      = require('../socket');
+const { uploadChatFile } = require('../middleware/upload');
 
-// GET /api/channels — list channel yang bisa diakses user
+// GET /api/channels — list channel yang bisa diakses user, lengkap unread count
 router.get('/', auth, async (req, res) => {
+  const myId = req.user._id.toString();
   const channels = await Channel.find({
     $or: [
       { isPrivate: false },
@@ -17,7 +20,20 @@ router.get('/', auth, async (req, res) => {
   })
     .populate('createdBy', 'namaLengkap fotoProfil')
     .sort({ updatedAt: -1 });
-  res.json(channels);
+
+  const result = await Promise.all(channels.map(async (ch) => {
+    const lastReadAt = ch.lastRead.get(myId) || new Date(0);
+    const unreadCount = await ChannelMessage.countDocuments({
+      channelId: ch._id,
+      userId: { $ne: req.user._id },
+      createdAt: { $gt: lastReadAt },
+    });
+    const obj = ch.toObject();
+    obj.unreadCount = unreadCount;
+    return obj;
+  }));
+
+  res.json(result);
 });
 
 // POST /api/channels — buat channel baru
@@ -179,6 +195,104 @@ router.post('/:id/messages', auth, async (req, res) => {
   if (io) io.to(`ch:${req.params.id}`).emit('channel:message', msg);
 
   res.status(201).json(msg);
+});
+
+// POST /api/channels/:id/messages/attachment — kirim pesan dengan lampiran file/gambar
+router.post('/:id/messages/attachment', auth, uploadChatFile.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'File wajib diunggah' });
+
+  const ch = await Channel.findById(req.params.id);
+  if (!ch) return res.status(404).json({ message: 'Channel tidak ditemukan' });
+
+  const isMember = ch.members.some(m => m.toString() === req.user._id.toString());
+  if (!isMember && ch.isPrivate)
+    return res.status(403).json({ message: 'Anda bukan member channel ini' });
+  if (!isMember) { ch.members.push(req.user._id); await ch.save(); }
+
+  const isi = (req.body.isi || '').toString().slice(0, 4000);
+
+  const msg = await ChannelMessage.create({
+    channelId: req.params.id,
+    userId: req.user._id,
+    isi,
+    attachments: [{
+      url: `/uploads/chat/${req.file.filename}`,
+      filename: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+    }],
+  });
+  await msg.populate('userId', 'namaLengkap fotoProfil role');
+
+  ch.updatedAt = new Date();
+  await ch.save();
+
+  const io = getIO();
+  if (io) io.to(`ch:${req.params.id}`).emit('channel:message', msg);
+
+  res.status(201).json(msg);
+});
+
+// PUT /api/channels/:id/messages/:msgId — edit pesan (pengirim saja)
+router.put('/:id/messages/:msgId', auth, async (req, res) => {
+  const { isi } = req.body;
+  if (!isi || !isi.trim()) return res.status(400).json({ message: 'Pesan tidak boleh kosong' });
+
+  const msg = await ChannelMessage.findById(req.params.msgId);
+  if (!msg) return res.status(404).json({ message: 'Pesan tidak ditemukan' });
+  if (msg.userId.toString() !== req.user._id.toString())
+    return res.status(403).json({ message: 'Hanya pengirim yang dapat mengedit pesan ini' });
+
+  msg.isi = isi.trim();
+  msg.editedAt = new Date();
+  await msg.save();
+  await msg.populate('userId', 'namaLengkap fotoProfil role');
+
+  const io = getIO();
+  if (io) io.to(`ch:${req.params.id}`).emit('channel:message:edited', msg);
+
+  res.json(msg);
+});
+
+// POST /api/channels/:id/messages/:msgId/react — toggle reaksi emoji
+router.post('/:id/messages/:msgId/react', auth, async (req, res) => {
+  const { emoji } = req.body;
+  if (!emoji) return res.status(400).json({ message: 'Emoji wajib diisi' });
+
+  const msg = await ChannelMessage.findById(req.params.msgId);
+  if (!msg) return res.status(404).json({ message: 'Pesan tidak ditemukan' });
+
+  let entry = msg.reactions.find(r => r.emoji === emoji);
+  const uid = req.user._id.toString();
+  if (entry) {
+    const has = entry.users.some(u => u.toString() === uid);
+    if (has) {
+      entry.users = entry.users.filter(u => u.toString() !== uid);
+      if (!entry.users.length) msg.reactions = msg.reactions.filter(r => r.emoji !== emoji);
+    } else {
+      entry.users.push(req.user._id);
+    }
+  } else {
+    msg.reactions.push({ emoji, users: [req.user._id] });
+  }
+  await msg.save();
+
+  const io = getIO();
+  if (io) io.to(`ch:${req.params.id}`).emit('channel:reaction', {
+    channelId: req.params.id, msgId: msg._id.toString(), reactions: msg.reactions,
+  });
+
+  res.json({ reactions: msg.reactions });
+});
+
+// PUT /api/channels/:id/read — tandai channel sudah dibaca
+router.put('/:id/read', auth, async (req, res) => {
+  const ch = await Channel.findById(req.params.id);
+  if (!ch) return res.status(404).json({ message: 'Channel tidak ditemukan' });
+
+  ch.lastRead.set(req.user._id.toString(), new Date());
+  await ch.save();
+  res.json({ message: 'Ditandai sudah dibaca' });
 });
 
 // DELETE /api/channels/:id/messages/:msgId

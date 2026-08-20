@@ -205,6 +205,83 @@
       font-size: 15px; padding: 4px 6px; border-radius: 4px; transition: var(--transition);
     }
     .msg-del-btn:hover { color: #EF4444; background: rgba(239,68,68,.1); }
+    .msg-edit-btn:hover { color: var(--accent); background: var(--accent-dim); }
+    .msg-react-btn:hover { color: var(--accent); background: var(--accent-dim); }
+    .msg-edited-tag { font-size: 10px; color: var(--text-3); margin-left: 4px; }
+
+    /* Attachments */
+    .msg-attachment { margin-top: 6px; max-width: 320px; }
+    .msg-attach-img { max-width: 320px; max-height: 260px; border-radius: 8px; display: block; cursor: zoom-in; border: 0.5px solid var(--border); }
+    .msg-attach-file {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 8px;
+      text-decoration: none; color: var(--text); max-width: 280px;
+    }
+    .msg-attach-file:hover { border-color: var(--accent); }
+    .msg-attach-file i { font-size: 22px; color: var(--accent); flex-shrink: 0; }
+    .msg-attach-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .msg-attach-size { font-size: 11px; color: var(--text-3); }
+
+    /* Reactions */
+    .msg-reactions { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+    .msg-reaction-pill {
+      display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 100px;
+      background: var(--surface-2); border: 0.5px solid var(--border); font-size: 12px;
+      cursor: pointer; transition: var(--transition); color: var(--text-2);
+    }
+    .msg-reaction-pill:hover { border-color: var(--accent); }
+    .msg-reaction-pill.mine { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .react-picker { position: relative; display: inline-block; }
+    .react-picker-menu {
+      display: none; position: absolute; bottom: 100%; right: 0; margin-bottom: 4px;
+      background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px;
+      padding: 6px; box-shadow: var(--shadow-lg); gap: 2px; z-index: 20;
+    }
+    .react-picker-menu.open { display: flex; }
+    .react-picker-emoji {
+      width: 30px; height: 30px; border: none; background: none; cursor: pointer;
+      font-size: 17px; border-radius: 6px; transition: var(--transition);
+    }
+    .react-picker-emoji:hover { background: var(--surface-2); transform: scale(1.15); }
+
+    /* Edit mode */
+    .msg-edit-box { display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
+    .msg-edit-box textarea {
+      font-size: 14px; font-family: inherit; color: var(--text); background: var(--surface);
+      border: 1px solid var(--accent); border-radius: 6px; padding: 6px 8px; resize: none;
+    }
+    .msg-edit-actions { display: flex; gap: 6px; font-size: 11px; }
+    .msg-edit-actions button {
+      border: none; background: none; cursor: pointer; color: var(--text-3); font-weight: 600; padding: 2px 4px;
+    }
+    .msg-edit-actions button.save { color: var(--accent); }
+    .msg-edit-actions button:hover { text-decoration: underline; }
+
+    /* Typing indicator */
+    .ch-typing { padding: 2px 16px; font-size: 12px; color: var(--text-3); font-style: italic; height: 18px; flex-shrink: 0; }
+
+    /* Unread badge on channel list */
+    .ch-item-badge {
+      min-width: 17px; height: 17px; padding: 0 5px; border-radius: 9px;
+      background: var(--accent-2); color: #fff; font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    /* Attachment button in input */
+    .ch-attach-btn {
+      background: none; border: none; cursor: pointer; color: var(--text-3);
+      font-size: 19px; padding: 4px; flex-shrink: 0; transition: var(--transition); border-radius: 6px;
+    }
+    .ch-attach-btn:hover { color: var(--accent); background: var(--accent-dim); }
+    .ch-pending-attach {
+      display: none; align-items: center; gap: 8px; padding: 8px 12px; margin: 0 16px 8px;
+      background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 8px; font-size: 12px;
+    }
+    .ch-pending-attach.active { display: flex; }
+    .ch-pending-attach i:first-child { font-size: 18px; color: var(--accent); }
+    .ch-pending-attach-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ch-pending-attach-remove { background: none; border: none; cursor: pointer; color: var(--text-3); font-size: 14px; }
+    .ch-pending-attach-remove:hover { color: #EF4444; }
 
     /* Input */
     .ch-input-wrap { padding: 0 16px 16px; background: var(--surface); flex-shrink: 0; }
@@ -889,6 +966,12 @@ let activeChannelId = null;
 let channels        = [];
 let msgBefore       = null;
 let loadingMore     = false;
+let messageCache    = {}; // msgId -> pesan lengkap (data mentah, untuk edit/reaksi)
+let pendingAttachFile = null;
+let typingUsers      = {}; // userId -> nama
+let typingTimeouts   = {};
+let lastTypingEmit   = 0;
+const REACTION_EMOJIS = ['👍','❤️','😂','😮','😢','🎉'];
 
 // ── Load list channel ──────────────────────────────────────────────────────────
 async function loadChannels() {
@@ -917,6 +1000,7 @@ function renderChannelList() {
         <div class="ch-item-name">${escHtml(ch.nama)}</div>
         ${ch.isPrivate ? '<div class="ch-item-priv">Privat</div>' : ''}
       </div>
+      ${ch.unreadCount > 0 ? `<div class="ch-item-badge">${ch.unreadCount > 99 ? '99+' : ch.unreadCount}</div>` : ''}
     </div>`).join('');
 }
 
@@ -931,6 +1015,10 @@ async function openChannel(id) {
 
   activeChannelId = id;
   msgBefore       = null;
+  messageCache    = {};
+  pendingAttachFile = null;
+  Object.values(typingTimeouts).forEach(t => clearTimeout(t));
+  typingUsers = {}; typingTimeouts = {};
 
   document.querySelectorAll('.ch-item').forEach(el => el.classList.remove('active'));
   const item = document.getElementById('chitem-' + id);
@@ -956,10 +1044,20 @@ async function openChannel(id) {
     <div class="ch-messages" id="ch-messages">
       <div style="text-align:center;color:var(--text-3);font-size:13px;padding:20px">Memuat pesan...</div>
     </div>
+    <div class="ch-typing" id="ch-typing"></div>
+    <div class="ch-pending-attach" id="ch-pending-attach">
+      <i class="ti ti-paperclip"></i>
+      <span class="ch-pending-attach-name" id="ch-pending-attach-name"></span>
+      <button class="ch-pending-attach-remove" onclick="clearPendingAttachment()" title="Batal"><i class="ti ti-x"></i></button>
+    </div>
     <div class="ch-input-wrap" id="ch-input-wrap">
       <div class="ch-input-box">
+        <button class="ch-attach-btn" onclick="document.getElementById('ch-file-input').click()" title="Lampirkan file">
+          <i class="ti ti-paperclip"></i>
+        </button>
+        <input type="file" id="ch-file-input" style="display:none" onchange="onFilePicked(this)">
         <textarea id="ch-msg-input" placeholder="Tulis pesan..." rows="1"
-          onkeydown="onMsgKeydown(event)" oninput="autoResize(this)"></textarea>
+          onkeydown="onMsgKeydown(event)" oninput="autoResize(this);notifyTyping()"></textarea>
         <button class="ch-send-btn" onclick="sendMessage()" id="ch-send-btn">
           <i class="ti ti-send"></i>
         </button>
@@ -1003,6 +1101,11 @@ async function openChannel(id) {
     // Join channel socket room untuk real-time messages
     const s = getSocket();
     s.emit('ch:join', { channelId: id });
+
+    // Tandai channel ini sudah dibaca & update badge di list
+    Channels.markRead(id).catch(() => {});
+    const chInList = channels.find(x => x._id === id);
+    if (chInList) { chInList.unreadCount = 0; renderChannelList(); }
 
     // Sync voice-panel state jika sudah in-voice sebelum channel dibuka
     if (inVoice) {
@@ -1068,6 +1171,67 @@ async function loadMoreMessages() {
   await loadMessages(activeChannelId, true);
 }
 
+function avColorForName(name) {
+  const inits = (name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  const avColors = ['#0E7C91','#16A34A','#EA580C','#0D9488','#DB2777'];
+  return avColors[inits.charCodeAt(0) % avColors.length];
+}
+
+function renderReactionsHtml(m) {
+  return (m.reactions || []).map(r => {
+    const mine = (r.users || []).some(u => (u._id || u || '').toString() === me._id);
+    return `<div class="msg-reaction-pill${mine ? ' mine' : ''}" onclick="reactToMessage('${m._id}','${r.emoji}')" title="${(r.users||[]).length} orang bereaksi">${r.emoji} ${(r.users||[]).length}</div>`;
+  }).join('');
+}
+
+function renderAttachmentsHtml(m) {
+  return (m.attachments || []).map(a => {
+    if (/^image\//.test(a.mimetype)) {
+      return `<div class="msg-attachment"><img class="msg-attach-img" src="${a.url}" alt="${escHtml(a.filename)}" onclick="window.open('${a.url}','_blank')"></div>`;
+    }
+    const sizeStr = a.size > 1024*1024 ? (a.size/1024/1024).toFixed(1) + ' MB' : Math.round(a.size/1024) + ' KB';
+    return `<div class="msg-attachment"><a class="msg-attach-file" href="${a.url}" target="_blank" rel="noopener">
+      <i class="ti ti-file-text"></i>
+      <div style="min-width:0"><div class="msg-attach-name">${escHtml(a.filename)}</div><div class="msg-attach-size">${sizeStr}</div></div>
+    </a></div>`;
+  }).join('');
+}
+
+function renderMessageRow(m, showHeader) {
+  messageCache[m._id] = m;
+
+  const u    = m.userId || {};
+  const uid  = (u._id || u || '').toString();
+  const name = u.namaLengkap || 'Unknown';
+  const time = new Date(m.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  const inits = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  const avHtml = u.fotoProfil
+    ? `<img src="${u.fotoProfil}" alt="">`
+    : `<span style="font-size:12px;font-weight:700;color:#fff">${inits}</span>`;
+  const isOwner = uid === me._id;
+
+  return `
+    <div class="msg-row" id="msg-${m._id}" data-uid="${uid}">
+      <div class="msg-av" style="background:${avColorForName(name)};visibility:${showHeader ? 'visible' : 'hidden'}">${avHtml}</div>
+      <div class="msg-content">
+        ${showHeader ? `<div class="msg-meta"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}</span></div>` : ''}
+        <div class="msg-text" id="msg-text-${m._id}">${m.isi ? escHtml(m.isi).replace(/\n/g, '<br>') : ''}${m.editedAt ? '<span class="msg-edited-tag">(diedit)</span>' : ''}</div>
+        ${renderAttachmentsHtml(m)}
+        <div class="msg-reactions" id="msg-reactions-${m._id}">${renderReactionsHtml(m)}</div>
+      </div>
+      <div class="msg-actions">
+        <div class="react-picker">
+          <button class="msg-react-btn" title="Reaksi" onclick="toggleReactPicker('${m._id}')"><i class="ti ti-mood-smile"></i></button>
+          <div class="react-picker-menu" id="react-menu-${m._id}">
+            ${REACTION_EMOJIS.map(e => `<button class="react-picker-emoji" onclick="reactToMessage('${m._id}','${e}')">${e}</button>`).join('')}
+          </div>
+        </div>
+        ${isOwner ? `<button class="msg-edit-btn" title="Edit" onclick="startEditMessage('${m._id}')"><i class="ti ti-pencil"></i></button>` : ''}
+        ${isOwner ? `<button class="msg-del-btn" title="Hapus" onclick="deleteMessage('${m._id}')"><i class="ti ti-trash"></i></button>` : ''}
+      </div>
+    </div>`;
+}
+
 function renderMessages(msgs) {
   if (!msgs.length) return '';
   let html = '';
@@ -1082,74 +1246,57 @@ function renderMessages(msgs) {
       lastDate = dateStr;
       lastUserId = '';
     }
-
-    const u    = m.userId || {};
-    const uid  = u._id || '';
-    const name = u.namaLengkap || 'Unknown';
-    const time = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    const inits = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    const avColors = ['#0E7C91','#16A34A','#EA580C','#0D9488','#DB2777'];
-    const avColor  = avColors[inits.charCodeAt(0) % avColors.length];
-    const avHtml   = u.fotoProfil
-      ? `<img src="${u.fotoProfil}" alt="">`
-      : `<span style="font-size:12px;font-weight:700;color:#fff">${inits}</span>`;
-
-    const isOwner = uid === me._id || uid?.toString() === me._id;
+    const uid = (m.userId?._id || m.userId || '').toString();
     const showHeader = uid !== lastUserId;
     lastUserId = uid;
-
-    html += `
-      <div class="msg-row" id="msg-${m._id}">
-        <div class="msg-av" style="background:${avColor};visibility:${showHeader ? 'visible' : 'hidden'}">${avHtml}</div>
-        <div class="msg-content">
-          ${showHeader ? `<div class="msg-meta"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}</span></div>` : ''}
-          <div class="msg-text">${escHtml(m.isi).replace(/\n/g, '<br>')}</div>
-        </div>
-        ${isOwner ? `
-          <div class="msg-actions">
-            <button class="msg-del-btn" title="Hapus" onclick="deleteMessage('${m._id}')"><i class="ti ti-trash"></i></button>
-          </div>` : ''}
-      </div>`;
+    html += renderMessageRow(m, showHeader);
   });
   return html;
+}
+
+function appendMessageToDom(msg) {
+  const el = document.getElementById('ch-messages');
+  const empty = el.querySelector('.ch-empty');
+  if (empty) empty.remove();
+  const rows = el.querySelectorAll('.msg-row');
+  const lastUid = rows.length ? rows[rows.length - 1].dataset.uid : '';
+  const uid = (msg.userId?._id || msg.userId || '').toString();
+  el.insertAdjacentHTML('beforeend', renderMessageRow(msg, uid !== lastUid));
+  el.scrollTop = el.scrollHeight;
+}
+
+// ── Lampiran file ──────────────────────────────────────────────────────────────
+function onFilePicked(input) {
+  const file = input.files[0];
+  input.value = '';
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { showToast('Ukuran file maksimal 10MB', 'error'); return; }
+  pendingAttachFile = file;
+  document.getElementById('ch-pending-attach-name').textContent = file.name;
+  document.getElementById('ch-pending-attach').classList.add('active');
+}
+function clearPendingAttachment() {
+  pendingAttachFile = null;
+  document.getElementById('ch-pending-attach')?.classList.remove('active');
 }
 
 // ── Kirim pesan ────────────────────────────────────────────────────────────────
 async function sendMessage() {
   const input = document.getElementById('ch-msg-input');
   const isi   = input.value.trim();
-  if (!isi || !activeChannelId) return;
+  const file  = pendingAttachFile;
+  if ((!isi && !file) || !activeChannelId) return;
 
   input.value = '';
   input.style.height = '';
   document.getElementById('ch-send-btn').disabled = true;
 
   try {
-    const msg = await Channels.sendMessage(activeChannelId, isi);
-    const el  = document.getElementById('ch-messages');
-    const empty = el.querySelector('.ch-empty');
-    if (empty) empty.remove();
-
-    const u    = msg.userId || {};
-    const name = u.namaLengkap || 'Unknown';
-    const time = new Date(msg.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    const inits = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    const avColors = ['#0E7C91','#16A34A','#EA580C','#0D9488','#DB2777'];
-    const avColor  = avColors[inits.charCodeAt(0) % avColors.length];
-    const avHtml   = u.fotoProfil ? `<img src="${u.fotoProfil}" alt="">` : `<span style="font-size:12px;font-weight:700;color:#fff">${inits}</span>`;
-
-    el.insertAdjacentHTML('beforeend', `
-      <div class="msg-row" id="msg-${msg._id}">
-        <div class="msg-av" style="background:${avColor}">${avHtml}</div>
-        <div class="msg-content">
-          <div class="msg-meta"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}</span></div>
-          <div class="msg-text">${escHtml(msg.isi).replace(/\n/g, '<br>')}</div>
-        </div>
-        <div class="msg-actions">
-          <button class="msg-del-btn" title="Hapus" onclick="deleteMessage('${msg._id}')"><i class="ti ti-trash"></i></button>
-        </div>
-      </div>`);
-    el.scrollTop = el.scrollHeight;
+    const msg = file
+      ? await Channels.sendAttachment(activeChannelId, file, isi)
+      : await Channels.sendMessage(activeChannelId, isi);
+    clearPendingAttachment();
+    appendMessageToDom(msg);
   } catch (e) { showToast(e.message, 'error'); }
 
   document.getElementById('ch-send-btn').disabled = false;
@@ -1164,6 +1311,87 @@ function autoResize(el) {
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
 
+// ── Typing indicator ──────────────────────────────────────────────────────────
+function notifyTyping() {
+  if (!activeChannelId) return;
+  const now = Date.now();
+  if (now - lastTypingEmit < 2000) return;
+  lastTypingEmit = now;
+  getSocket().emit('ch:typing', { channelId: activeChannelId });
+}
+function renderTyping() {
+  const el = document.getElementById('ch-typing');
+  if (!el) return;
+  const names = Object.values(typingUsers);
+  el.textContent = !names.length ? '' : names.length === 1
+    ? `${names[0]} sedang mengetik...`
+    : `${names.length} orang sedang mengetik...`;
+}
+function clearTypingFor(uid) {
+  delete typingUsers[uid];
+  clearTimeout(typingTimeouts[uid]);
+  delete typingTimeouts[uid];
+  renderTyping();
+}
+
+// ── Edit pesan ─────────────────────────────────────────────────────────────────
+function startEditMessage(msgId) {
+  const m = messageCache[msgId];
+  const textEl = document.getElementById('msg-text-' + msgId);
+  if (!m || !textEl) return;
+  textEl.innerHTML = `
+    <div class="msg-edit-box">
+      <textarea id="edit-input-${msgId}" rows="2" onkeydown="if(event.key==='Escape')cancelEditMessage('${msgId}')">${escHtml(m.isi)}</textarea>
+      <div class="msg-edit-actions">
+        <button class="save" onclick="saveEditMessage('${msgId}')">Simpan</button>
+        <button onclick="cancelEditMessage('${msgId}')">Batal</button>
+      </div>
+    </div>`;
+  const ta = document.getElementById('edit-input-' + msgId);
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+function cancelEditMessage(msgId) {
+  const m = messageCache[msgId];
+  const textEl = document.getElementById('msg-text-' + msgId);
+  if (textEl && m) {
+    textEl.innerHTML = (m.isi ? escHtml(m.isi).replace(/\n/g, '<br>') : '') + (m.editedAt ? '<span class="msg-edited-tag">(diedit)</span>' : '');
+  }
+}
+async function saveEditMessage(msgId) {
+  const ta = document.getElementById('edit-input-' + msgId);
+  const isi = ta.value.trim();
+  if (!isi) { showToast('Pesan tidak boleh kosong', 'error'); return; }
+  try {
+    const msg = await Channels.editMessage(activeChannelId, msgId, isi);
+    messageCache[msgId] = msg;
+    const textEl = document.getElementById('msg-text-' + msgId);
+    if (textEl) textEl.innerHTML = escHtml(msg.isi).replace(/\n/g, '<br>') + '<span class="msg-edited-tag">(diedit)</span>';
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ── Reaksi emoji ───────────────────────────────────────────────────────────────
+function toggleReactPicker(msgId) {
+  document.querySelectorAll('.react-picker-menu.open').forEach(el => {
+    if (el.id !== 'react-menu-' + msgId) el.classList.remove('open');
+  });
+  document.getElementById('react-menu-' + msgId)?.classList.toggle('open');
+}
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.react-picker')) {
+    document.querySelectorAll('.react-picker-menu.open').forEach(el => el.classList.remove('open'));
+  }
+});
+async function reactToMessage(msgId, emoji) {
+  document.getElementById('react-menu-' + msgId)?.classList.remove('open');
+  try {
+    const { reactions } = await Channels.react(activeChannelId, msgId, emoji);
+    messageCache[msgId] = { ...(messageCache[msgId] || {}), reactions };
+    const el = document.getElementById('msg-reactions-' + msgId);
+    if (el) el.innerHTML = renderReactionsHtml({ reactions });
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
 // ── Hapus pesan ────────────────────────────────────────────────────────────────
 async function deleteMessage(msgId) {
   if (!await showConfirm('Hapus pesan ini?')) return;
@@ -1171,6 +1399,7 @@ async function deleteMessage(msgId) {
     await Channels.deleteMessage(activeChannelId, msgId);
     const el = document.getElementById('msg-' + msgId);
     if (el) el.remove();
+    delete messageCache[msgId];
   } catch(e) { showToast(e.message, 'error'); }
 }
 
@@ -1275,33 +1504,32 @@ function getSocket() {
   // ── Real-time channel messages ────────────────────────────────────────────
   socket.on('channel:message', (msg) => {
     if (msg.channelId !== activeChannelId) return;
-    const uid = msg.userId?._id || msg.userId;
-    if (uid === me._id || uid?.toString() === me._id) return;
+    const uid = (msg.userId?._id || msg.userId || '').toString();
+    if (uid === me._id) return;
+    if (!document.getElementById('ch-messages')) return;
+    appendMessageToDom(msg);
+    clearTypingFor(uid);
+    Channels.markRead(activeChannelId).catch(() => {});
+  });
 
-    const el = document.getElementById('ch-messages');
-    if (!el) return;
-    const empty = el.querySelector('.ch-empty');
-    if (empty) empty.remove();
+  socket.on('channel:message:edited', (msg) => {
+    messageCache[msg._id] = msg;
+    const textEl = document.getElementById('msg-text-' + msg._id);
+    if (textEl) textEl.innerHTML = (msg.isi ? escHtml(msg.isi).replace(/\n/g,'<br>') : '') + '<span class="msg-edited-tag">(diedit)</span>';
+  });
 
-    const u    = msg.userId || {};
-    const name = u.namaLengkap || 'Unknown';
-    const time = new Date(msg.createdAt).toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
-    const inits = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    const avColors = ['#0E7C91','#16A34A','#EA580C','#0D9488','#DB2777'];
-    const avColor  = avColors[inits.charCodeAt(0) % avColors.length];
-    const avHtml   = u.fotoProfil
-      ? `<img src="${u.fotoProfil}" alt="">`
-      : `<span style="font-size:12px;font-weight:700;color:#fff">${inits}</span>`;
+  socket.on('channel:reaction', ({ msgId, reactions }) => {
+    messageCache[msgId] = { ...(messageCache[msgId] || {}), reactions };
+    const el = document.getElementById('msg-reactions-' + msgId);
+    if (el) el.innerHTML = renderReactionsHtml({ reactions });
+  });
 
-    el.insertAdjacentHTML('beforeend', `
-      <div class="msg-row" id="msg-${msg._id}">
-        <div class="msg-av" style="background:${avColor}">${avHtml}</div>
-        <div class="msg-content">
-          <div class="msg-meta"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}</span></div>
-          <div class="msg-text">${escHtml(msg.isi).replace(/\n/g,'<br>')}</div>
-        </div>
-      </div>`);
-    el.scrollTop = el.scrollHeight;
+  socket.on('channel:typing', ({ channelId, userId, name }) => {
+    if (channelId !== activeChannelId || userId === me._id) return;
+    typingUsers[userId] = name;
+    renderTyping();
+    clearTimeout(typingTimeouts[userId]);
+    typingTimeouts[userId] = setTimeout(() => clearTypingFor(userId), 3000);
   });
 
   return socket;

@@ -240,7 +240,16 @@ const Channels = {
     return apiFetch(`/channels/${id}/messages` + (qs ? '?' + qs : ''));
   },
   async sendMessage(id, isi)      { return apiFetch(`/channels/${id}/messages`, { method: 'POST', body: JSON.stringify({ isi }) }); },
+  async editMessage(id, msgId, isi) { return apiFetch(`/channels/${id}/messages/${msgId}`, { method: 'PUT', body: JSON.stringify({ isi }) }); },
   async deleteMessage(id, msgId)  { return apiFetch(`/channels/${id}/messages/${msgId}`, { method: 'DELETE' }); },
+  async react(id, msgId, emoji)   { return apiFetch(`/channels/${id}/messages/${msgId}/react`, { method: 'POST', body: JSON.stringify({ emoji }) }); },
+  async markRead(id)              { return apiFetch(`/channels/${id}/read`, { method: 'PUT' }); },
+  async sendAttachment(id, file, isi) {
+    const fd = new FormData();
+    fd.append('file', file);
+    if (isi) fd.append('isi', isi);
+    return apiUpload(`/channels/${id}/messages/attachment`, fd);
+  },
 };
 
 // ── Direct Messages (chat pribadi) ──────────────────────────────────────────────

@@ -6,6 +6,7 @@ const channelSchema = new mongoose.Schema({
   isPrivate:   { type: Boolean, default: false },
   createdBy:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   members:     [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  lastRead:    { type: Map, of: Date, default: {} },
 }, { timestamps: true });
 
 channelSchema.index({ members: 1 });

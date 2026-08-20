@@ -52,4 +52,29 @@ const uploadAvatar = multer({
   limits: { fileSize: 2 * 1024 * 1024 },
 });
 
-module.exports = { upload, uploadAvatar };
+// Upload lampiran chat channel (gambar & dokumen umum)
+const CHAT_ALLOWED = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.xlsx', '.docx', '.pptx', '.txt', '.zip'];
+const chatStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, '../../uploads/chat');
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const unique = Date.now() + '-' + Math.round(Math.random() * 1e6);
+    const ext    = path.extname(file.originalname).toLowerCase();
+    cb(null, unique + ext);
+  },
+});
+
+const uploadChatFile = multer({
+  storage: chatStorage,
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (CHAT_ALLOWED.includes(ext)) cb(null, true);
+    else cb(new Error(`Format file tidak didukung. Gunakan: ${CHAT_ALLOWED.join(', ')}`));
+  },
+  limits: { fileSize: MAX_SIZE },
+});
+
+module.exports = { upload, uploadAvatar, uploadChatFile };
