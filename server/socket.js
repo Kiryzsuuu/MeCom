@@ -40,6 +40,27 @@ function initSocket(server) {
     socket.on('task:leave', ({ taskId }) => {
       if (taskId) socket.leave(`task:${taskId}`);
     });
+
+    // ── Private call signaling (relay saja, tidak ada state di server) ─────────
+    socket.on('call:invite', ({ targetUserId, conversationId, callerName, callerPhoto }) => {
+      if (!targetUserId || !conversationId) return;
+      io.to(`user:${targetUserId}`).emit('call:incoming', {
+        fromUserId: socket.userId, conversationId,
+        callerName: callerName || socket.userName, callerPhoto: callerPhoto || socket.userPhoto,
+      });
+    });
+    socket.on('call:cancel', ({ targetUserId, conversationId }) => {
+      if (!targetUserId) return;
+      io.to(`user:${targetUserId}`).emit('call:cancelled', { conversationId, fromUserId: socket.userId });
+    });
+    socket.on('call:decline', ({ targetUserId, conversationId }) => {
+      if (!targetUserId) return;
+      io.to(`user:${targetUserId}`).emit('call:declined', { conversationId, fromUserId: socket.userId });
+    });
+    socket.on('call:accept', ({ targetUserId, conversationId }) => {
+      if (!targetUserId) return;
+      io.to(`user:${targetUserId}`).emit('call:accepted', { conversationId, fromUserId: socket.userId });
+    });
   });
 
   return io;

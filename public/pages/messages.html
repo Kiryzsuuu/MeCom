@@ -124,6 +124,46 @@
     .dm-picker-name { font-size: 13px; font-weight: 600; color: var(--text); }
     .dm-picker-sub { font-size: 11px; color: var(--text-3); }
 
+    /* ── Call overlay ── */
+    .call-overlay {
+      position: fixed; inset: 0; background: rgba(18,18,20,.92); z-index: 200;
+      display: none; align-items: center; justify-content: center; flex-direction: column;
+      color: #fff; gap: 16px;
+    }
+    .call-overlay.active { display: flex; }
+    .call-av {
+      width: 96px; height: 96px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 28px; font-weight: 700; overflow: hidden; box-shadow: 0 0 0 4px rgba(255,255,255,.08);
+    }
+    .call-av img { width: 100%; height: 100%; object-fit: cover; }
+    .call-av.ringing { animation: call-pulse 1.4s ease-in-out infinite; }
+    @keyframes call-pulse { 0%,100% { box-shadow: 0 0 0 4px rgba(255,255,255,.08); } 50% { box-shadow: 0 0 0 12px rgba(255,255,255,.03); } }
+    .call-name { font-size: 18px; font-weight: 700; }
+    .call-status { font-size: 13px; color: rgba(255,255,255,.6); }
+    .call-actions { display: flex; gap: 16px; margin-top: 12px; }
+    .call-btn {
+      width: 52px; height: 52px; border-radius: 50%; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+      background: rgba(255,255,255,.12); color: #fff; transition: var(--transition);
+    }
+    .call-btn:hover { background: rgba(255,255,255,.2); }
+    .call-btn.end { background: #EF4444; }
+    .call-btn.end:hover { background: #DC2626; }
+    .call-btn.accept { background: #22C55E; }
+    .call-btn.accept:hover { background: #16A34A; }
+    .call-btn.off { background: rgba(255,255,255,.25); color: #EF4444; }
+    .call-videos { position: absolute; inset: 0; display: none; }
+    .call-videos.active { display: block; }
+    .call-videos video { width: 100%; height: 100%; object-fit: cover; }
+    .call-videos .call-remote-video { position: absolute; inset: 0; background: #000; }
+    .call-videos .call-local-video {
+      position: absolute; bottom: 100px; right: 20px; width: 140px; height: 100px;
+      border-radius: 12px; overflow: hidden; border: 2px solid rgba(255,255,255,.2); transform: scaleX(-1);
+    }
+    .call-videos .call-local-video video { width: 100%; height: 100%; object-fit: cover; }
+    .call-top { position: absolute; top: 20px; left: 0; right: 0; text-align: center; z-index: 1; }
+    .call-bottom { position: absolute; bottom: 30px; left: 0; right: 0; display: flex; justify-content: center; z-index: 1; }
+
     @media (max-width: 768px) {
       .dm-list-panel { width: 100%; }
       .dm-list-panel.hide-mobile-list { display: none; }
@@ -160,10 +200,12 @@
           <div class="dm-chat-head">
             <button class="dm-back-btn btn-icon" style="display:none" onclick="closeChatMobile()"><i class="ti ti-arrow-left"></i></button>
             <div class="dm-conv-av" id="ch-av"></div>
-            <div>
+            <div style="flex:1;min-width:0">
               <div class="dm-chat-head-name" id="ch-name">—</div>
               <div class="dm-chat-head-role" id="ch-role">—</div>
             </div>
+            <button class="btn-icon" title="Panggilan suara" onclick="startCall(false)"><i class="ti ti-phone"></i></button>
+            <button class="btn-icon" title="Panggilan video" onclick="startCall(true)"><i class="ti ti-video"></i></button>
           </div>
           <div class="dm-msg-scroll" id="dm-msg-scroll"></div>
           <div class="dm-input-wrap">
@@ -173,6 +215,34 @@
         </div>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- Call overlay -->
+<div class="call-overlay" id="call-overlay">
+  <div class="call-videos" id="call-videos">
+    <div class="call-remote-video" id="call-remote-video"></div>
+    <div class="call-local-video" id="call-local-video"></div>
+  </div>
+  <div class="call-top" id="call-top" style="display:none">
+    <div class="call-status" id="call-top-status"></div>
+  </div>
+  <div class="call-av" id="call-av"></div>
+  <div class="call-name" id="call-name">—</div>
+  <div class="call-status" id="call-status">Memanggil...</div>
+  <div class="call-actions" id="call-actions-outgoing">
+    <button class="call-btn end" title="Batalkan" onclick="hangupCall()"><i class="ti ti-phone-off"></i></button>
+  </div>
+  <div class="call-actions" id="call-actions-incoming" style="display:none">
+    <button class="call-btn end" title="Tolak" onclick="declineCall()"><i class="ti ti-phone-off"></i></button>
+    <button class="call-btn accept" title="Terima" onclick="acceptCall()"><i class="ti ti-phone"></i></button>
+  </div>
+  <div class="call-bottom" id="call-bottom" style="display:none">
+    <div class="call-actions" style="margin-top:0">
+      <button class="call-btn" id="call-mute-btn" title="Mute" onclick="toggleCallMute()"><i class="ti ti-microphone"></i></button>
+      <button class="call-btn" id="call-video-btn" title="Kamera" onclick="toggleCallVideo()"><i class="ti ti-video-off"></i></button>
+      <button class="call-btn end" title="Akhiri" onclick="hangupCall()"><i class="ti ti-phone-off"></i></button>
     </div>
   </div>
 </div>
@@ -192,6 +262,7 @@
 </div>
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
 <script src="/js/api.js"></script>
 <script src="/js/search.js"></script>
 <script src="/js/sidebar.js"></script>
@@ -451,12 +522,237 @@ async function startChatWith(userId) {
   }
 }
 
+// ── Private call (1-on-1, via LiveKit) ──────────────────────────────────────────
+let callState      = 'idle'; // idle | outgoing | incoming | connecting | connected
+let callConvId     = null;
+let callPeerId     = null;
+let callPeerName   = null;
+let callPeerPhoto  = null;
+let callWithVideo  = false;
+let callLkRoom     = null;
+let callRingTimeout = null;
+let ringtoneInterval = null;
+
+function startCall(withVideo) {
+  if (!activeConvId || !activeConv) { showToast('Pilih percakapan dulu', 'error'); return; }
+  if (callState !== 'idle') { showToast('Sedang ada panggilan aktif', 'error'); return; }
+  if (typeof LivekitClient === 'undefined') { showToast('Voice belum siap dimuat, coba refresh', 'error'); return; }
+
+  callConvId    = activeConvId;
+  callPeerId    = activeConv.user._id;
+  callPeerName  = activeConv.user.namaLengkap;
+  callPeerPhoto = activeConv.user.fotoProfil;
+  callWithVideo = !!withVideo;
+  callState     = 'outgoing';
+
+  showCallOverlay('outgoing');
+  dmSocket()?.emit('call:invite', {
+    targetUserId: callPeerId, conversationId: callConvId,
+    callerName: me.namaLengkap, callerPhoto: me.fotoProfil,
+  });
+
+  callRingTimeout = setTimeout(() => {
+    if (callState === 'outgoing') {
+      showToast('Tidak ada jawaban', 'error');
+      dmSocket()?.emit('call:cancel', { targetUserId: callPeerId, conversationId: callConvId });
+      endCallCleanup();
+    }
+  }, 30000);
+}
+
+function acceptCall() {
+  clearTimeout(callRingTimeout);
+  stopRingtone();
+  dmSocket()?.emit('call:accept', { targetUserId: callPeerId, conversationId: callConvId });
+  joinCallRoom();
+}
+
+function declineCall() {
+  stopRingtone();
+  dmSocket()?.emit('call:decline', { targetUserId: callPeerId, conversationId: callConvId });
+  endCallCleanup();
+}
+
+function hangupCall() {
+  if (callState === 'outgoing') dmSocket()?.emit('call:cancel', { targetUserId: callPeerId, conversationId: callConvId });
+  endCallCleanup();
+}
+
+function showCallOverlay(mode) {
+  document.getElementById('call-overlay').classList.add('active');
+  const av = document.getElementById('call-av');
+  av.style.background = avColorFor(callPeerId);
+  av.innerHTML = callPeerPhoto ? `<img src="${callPeerPhoto}" alt="">` : escHtml(initsOf(callPeerName));
+  av.classList.toggle('ringing', mode !== 'connected');
+  av.style.display = mode === 'connected' && callWithVideo ? 'none' : 'flex';
+  document.getElementById('call-name').textContent = callPeerName || '—';
+  document.getElementById('call-name').style.display = mode === 'connected' && callWithVideo ? 'none' : 'block';
+
+  const statusEl = document.getElementById('call-status');
+  statusEl.style.display = mode === 'connected' ? 'none' : 'block';
+  statusEl.textContent = mode === 'outgoing' ? 'Memanggil...' : mode === 'incoming' ? 'Panggilan masuk...' : mode === 'connecting' ? 'Menyambungkan...' : '';
+
+  document.getElementById('call-actions-outgoing').style.display = mode === 'outgoing' ? 'flex' : 'none';
+  document.getElementById('call-actions-incoming').style.display = mode === 'incoming' ? 'flex' : 'none';
+  document.getElementById('call-bottom').style.display = mode === 'connected' ? 'flex' : 'none';
+  document.getElementById('call-top').style.display = mode === 'connected' && callWithVideo ? 'block' : 'none';
+  document.getElementById('call-top-status').textContent = callPeerName || '';
+  if (mode !== 'connected') document.getElementById('call-videos').classList.remove('active');
+}
+
+async function joinCallRoom() {
+  callState = 'connecting';
+  showCallOverlay('connecting');
+  try {
+    callLkRoom = new LivekitClient.Room({ adaptiveStream: true, dynacast: true });
+    wireCallRoomEvents(callLkRoom);
+
+    const { token, url } = await Voice.token('call-' + callConvId);
+    await callLkRoom.connect(url, token);
+
+    await callLkRoom.localParticipant.setMicrophoneEnabled(true);
+    if (callWithVideo) {
+      await callLkRoom.localParticipant.setCameraEnabled(true);
+      attachLocalCallVideo();
+      document.getElementById('call-videos').classList.add('active');
+    }
+
+    callState = 'connected';
+    showCallOverlay('connected');
+    updateCallButtons();
+  } catch (err) {
+    showToast('Gagal terhubung: ' + (err?.message || err), 'error');
+    endCallCleanup();
+  }
+}
+
+function wireCallRoomEvents(room) {
+  const { RoomEvent, Track } = LivekitClient;
+
+  room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+    if (track.kind === Track.Kind.Audio) {
+      const el = track.attach();
+      el.id = 'call-remote-audio';
+      document.body.appendChild(el);
+      el.play().catch(() => {});
+    }
+    if (track.kind === Track.Kind.Video) {
+      const container = document.getElementById('call-remote-video');
+      container.innerHTML = '';
+      const vidEl = track.attach();
+      vidEl.style.cssText = 'width:100%;height:100%;object-fit:cover';
+      container.appendChild(vidEl);
+      document.getElementById('call-videos').classList.add('active');
+    }
+  });
+
+  room.on(RoomEvent.TrackUnsubscribed, (track) => {
+    track.detach().forEach(el => el.remove());
+  });
+
+  room.on(RoomEvent.ParticipantDisconnected, () => {
+    showToast((callPeerName || 'Pengguna') + ' mengakhiri panggilan', 'error');
+    endCallCleanup();
+  });
+
+  room.on(RoomEvent.Disconnected, () => {
+    if (callState !== 'idle') endCallCleanup();
+  });
+}
+
+function attachLocalCallVideo() {
+  const pub = callLkRoom?.localParticipant?.getTrackPublication(LivekitClient.Track.Source.Camera);
+  const container = document.getElementById('call-local-video');
+  if (!container) return;
+  container.innerHTML = '';
+  if (pub?.videoTrack) container.appendChild(pub.videoTrack.attach());
+}
+
+function updateCallButtons() {
+  const muteBtn = document.getElementById('call-mute-btn');
+  const vidBtn  = document.getElementById('call-video-btn');
+  const micOn = !!callLkRoom?.localParticipant?.isMicrophoneEnabled;
+  const camOn = !!callLkRoom?.localParticipant?.isCameraEnabled;
+  if (muteBtn) {
+    muteBtn.className = 'call-btn' + (!micOn ? ' off' : '');
+    muteBtn.innerHTML = `<i class="ti ${micOn ? 'ti-microphone' : 'ti-microphone-off'}"></i>`;
+  }
+  if (vidBtn) {
+    vidBtn.className = 'call-btn' + (camOn ? '' : ' off');
+    vidBtn.innerHTML = `<i class="ti ${camOn ? 'ti-video' : 'ti-video-off'}"></i>`;
+  }
+}
+
+async function toggleCallMute() {
+  if (!callLkRoom) return;
+  const enabled = callLkRoom.localParticipant.isMicrophoneEnabled;
+  await callLkRoom.localParticipant.setMicrophoneEnabled(!enabled);
+  updateCallButtons();
+}
+
+async function toggleCallVideo() {
+  if (!callLkRoom) return;
+  const enabled = callLkRoom.localParticipant.isCameraEnabled;
+  await callLkRoom.localParticipant.setCameraEnabled(!enabled);
+  callWithVideo = !enabled;
+  if (!enabled) { attachLocalCallVideo(); document.getElementById('call-videos').classList.add('active'); }
+  else { document.getElementById('call-local-video').innerHTML = ''; }
+  showCallOverlay('connected');
+  updateCallButtons();
+}
+
+function endCallCleanup() {
+  clearTimeout(callRingTimeout);
+  stopRingtone();
+  try { callLkRoom?.disconnect(); } catch (e) {}
+  callLkRoom = null;
+
+  document.getElementById('call-overlay').classList.remove('active');
+  document.getElementById('call-remote-video').innerHTML = '';
+  document.getElementById('call-local-video').innerHTML = '';
+  document.getElementById('call-remote-audio')?.remove();
+
+  callState = 'idle'; callConvId = null; callPeerId = null; callPeerName = null; callPeerPhoto = null; callWithVideo = false;
+}
+
+function playRingtone() {
+  stopRingtone();
+  const tone = () => {
+    try {
+      const ctx = new AudioContext();
+      ctx.resume().then(() => {
+        const now = ctx.currentTime;
+        [740, 740].forEach((f, i) => {
+          const osc = ctx.createOscillator(), gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type = 'sine'; osc.frequency.value = f;
+          const t = now + i * 0.3;
+          gain.gain.setValueAtTime(0, t);
+          gain.gain.linearRampToValueAtTime(0.25, t + 0.05);
+          gain.gain.linearRampToValueAtTime(0, t + 0.28);
+          osc.start(t); osc.stop(t + 0.3);
+        });
+        setTimeout(() => ctx.close(), 800);
+      });
+    } catch (e) {}
+  };
+  tone();
+  ringtoneInterval = setInterval(tone, 1600);
+}
+function stopRingtone() {
+  if (ringtoneInterval) { clearInterval(ringtoneInterval); ringtoneInterval = null; }
+}
+
 // ── Realtime ─────────────────────────────────────────────────────────────────────
+let dmSocketInstance = null;
+function dmSocket() { return dmSocketInstance; }
+
 function initDmSocket() {
   if (typeof io === 'undefined') return;
   const token = getToken();
   if (!token) return;
   const socket = io(window.location.origin, { auth: { token } });
+  dmSocketInstance = socket;
 
   socket.on('dm:message', ({ conversationId, message }) => {
     const isOwn = (message.senderId?._id || message.senderId) === me._id;
@@ -487,6 +783,43 @@ function initDmSocket() {
       renderMessages();
     }
   });
+
+  // ── Private call signaling ──────────────────────────────────────────────────
+  socket.on('call:incoming', (data) => {
+    if (callState !== 'idle') {
+      socket.emit('call:decline', { targetUserId: data.fromUserId, conversationId: data.conversationId });
+      return;
+    }
+    callState     = 'incoming';
+    callConvId    = data.conversationId;
+    callPeerId    = data.fromUserId;
+    callPeerName  = data.callerName || 'Seseorang';
+    callPeerPhoto = data.callerPhoto || null;
+    callWithVideo = false;
+    showCallOverlay('incoming');
+    playRingtone();
+  });
+
+  socket.on('call:cancelled', (data) => {
+    if (callState === 'incoming' && data.conversationId === callConvId) {
+      showToast('Panggilan dibatalkan', 'error');
+      endCallCleanup();
+    }
+  });
+
+  socket.on('call:declined', (data) => {
+    if (callState === 'outgoing' && data.conversationId === callConvId) {
+      showToast((callPeerName || 'Pengguna') + ' menolak panggilan', 'error');
+      endCallCleanup();
+    }
+  });
+
+  socket.on('call:accepted', (data) => {
+    if (callState === 'outgoing' && data.conversationId === callConvId) {
+      clearTimeout(callRingTimeout);
+      joinCallRoom();
+    }
+  });
 }
 
 window.addEventListener('resize', () => {
@@ -497,7 +830,10 @@ window.addEventListener('resize', () => {
   }
 });
 
-window.addEventListener('beforeunload', () => { window.__activeDmConversationId = null; });
+window.addEventListener('beforeunload', () => {
+  window.__activeDmConversationId = null;
+  try { callLkRoom?.disconnect(); } catch (e) {}
+});
 
 init();
 initDmSocket();

@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { AccessToken, RoomServiceClient } = require('livekit-server-sdk');
 const auth = require('../middleware/auth');
+const Conversation = require('../models/Conversation');
 
 function getRoomService() {
   if (!process.env.LIVEKIT_URL || !process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET) return null;
@@ -15,6 +16,15 @@ router.get('/token', auth, async (req, res) => {
 
   const room = (req.query.room || 'general').toString().slice(0, 100).replace(/[^a-zA-Z0-9_-]/g, '');
   if (!room) return res.status(400).json({ message: 'Room tidak valid' });
+
+  // Room private call (1-on-1) — hanya partisipan percakapan yang boleh masuk
+  if (room.startsWith('call-')) {
+    const conversationId = room.slice(5);
+    const c = await Conversation.findById(conversationId).catch(() => null);
+    if (!c || !c.participants.some(p => p.toString() === req.user._id.toString())) {
+      return res.status(403).json({ message: 'Akses ditolak' });
+    }
+  }
 
   const at = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, {
     identity: req.user._id.toString(),
