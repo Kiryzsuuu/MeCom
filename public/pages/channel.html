@@ -1699,6 +1699,23 @@ function camCaptureOptions() {
   return vsm.camId ? { deviceId: vsm.camId } : undefined;
 }
 
+// Update badge mic-off di tile (avatar-only ATAU video) tanpa perlu bikin ulang tile-nya
+function setTileMicBadge(userId, muted) {
+  const tile = document.getElementById('vtile-p-' + userId) || document.getElementById('vtile-' + userId);
+  if (!tile) return;
+  let badge = tile.querySelector('.vt-mic-off');
+  if (muted) {
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.className = 'vt-mic-off';
+      badge.innerHTML = '<i class="ti ti-microphone-off"></i>';
+      tile.appendChild(badge);
+    }
+  } else {
+    badge?.remove();
+  }
+}
+
 function upsertParticipant(p) {
   let meta = {};
   try { meta = JSON.parse(p.metadata || '{}'); } catch (e) {}
@@ -1771,15 +1788,17 @@ function wireRoomEvents(room) {
 
   room.on(RoomEvent.TrackMuted, (publication, participant) => {
     if (participant.isLocal) return;
-    if (publication.source === Track.Source.Microphone && voiceParticipants[participant.identity]) {
-      voiceParticipants[participant.identity].muted = true;
+    if (publication.source === Track.Source.Microphone) {
+      if (voiceParticipants[participant.identity]) voiceParticipants[participant.identity].muted = true;
+      setTileMicBadge(participant.identity, true);
       renderVoiceParticipants();
     }
   });
   room.on(RoomEvent.TrackUnmuted, (publication, participant) => {
     if (participant.isLocal) return;
-    if (publication.source === Track.Source.Microphone && voiceParticipants[participant.identity]) {
-      voiceParticipants[participant.identity].muted = false;
+    if (publication.source === Track.Source.Microphone) {
+      if (voiceParticipants[participant.identity]) voiceParticipants[participant.identity].muted = false;
+      setTileMicBadge(participant.identity, false);
       renderVoiceParticipants();
     }
   });
