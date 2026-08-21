@@ -401,6 +401,7 @@
       width: 80px; height: 80px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       font-size: 28px; font-weight: 800; color: #fff; flex-shrink: 0; overflow: hidden;
+      position: absolute; inset: 0; margin: auto; z-index: 1;
     }
     .video-tile .vt-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .video-tile .vt-stop-share {
@@ -2481,13 +2482,17 @@ function addMyVideoTile() {
   tile.dataset.uid = me._id;
   tile.onclick = () => pinTile('vtile-me');
   tile.innerHTML = `
-    <video id="local-video" autoplay muted playsinline style="display:none;transform:scaleX(-1);width:100%;height:100%;object-fit:cover"></video>
+    <video id="local-video" autoplay muted playsinline style="transform:scaleX(-1);width:100%;height:100%;object-fit:cover"></video>
     <div class="vt-avatar" id="vtile-me-avatar" style="background:${avColor}">${avHtml}</div>
     <div class="vt-name"><i class="ti ti-microphone" style="font-size:11px"></i>${escHtml(me.namaLengkap)} (Anda)</div>
     ${makePinBtn('vtile-me')}`;
   grid.appendChild(tile);
 }
 
+// PENTING: elemen <video> tidak boleh display:none — LiveKit adaptiveStream pakai
+// visibility elemen (bounding box) untuk memutuskan kirim video atau tidak; kalau
+// elemen disembunyikan sebelum frame pertama datang, videonya tidak akan pernah
+// dikirim sama sekali. Yang disembunyikan cukup avatar-nya (overlay di atas video).
 function updateMyVideoTile(show) {
   const vid = document.getElementById('local-video');
   const av  = document.getElementById('vtile-me-avatar');
@@ -2496,14 +2501,12 @@ function updateMyVideoTile(show) {
     const pub = lkRoom?.localParticipant?.getTrackPublication(LivekitClient.Track.Source.Camera);
     if (pub?.videoTrack) {
       pub.videoTrack.attach(vid);
-      vid.style.display = 'block';
       vid.style.transform = 'scaleX(-1)';
       vid.play().catch(() => {});
       if (av) av.style.display = 'none';
     }
   } else {
     vid.srcObject = null;
-    vid.style.display = 'none';
     if (av) av.style.display = '';
   }
 }
@@ -2525,15 +2528,18 @@ function addRemoteVideoTile(userId, track) {
   tile.dataset.uid = userId || '';
   tile.onclick = () => pinTile(tileId);
   tile.innerHTML = `
-    <video autoplay playsinline style="width:100%;height:100%;object-fit:cover;display:none"></video>
+    <video autoplay playsinline style="width:100%;height:100%;object-fit:cover"></video>
     <div class="vt-avatar" style="background:${avColor}" id="${tileId}-av">${p.photo ? `<img src="${p.photo}" alt="">` : inits}</div>
     <div class="vt-name">${escHtml(name)}</div>
     ${makePinBtn(tileId)}`;
 
+  // PENTING: jangan display:none video-nya — LiveKit adaptiveStream memakai visibility
+  // elemen untuk memutuskan kirim video atau tidak; kalau disembunyikan sebelum frame
+  // pertama datang, videonya tidak akan pernah dikirim. Avatar-lah yang disembunyikan
+  // (dia overlay di atas video lewat CSS, bukan sebaliknya).
   const vid = tile.querySelector('video');
   track.attach(vid);
   vid.onloadedmetadata = () => {
-    vid.style.display = 'block';
     tile.querySelector('.vt-avatar').style.display = 'none';
     vid.play().catch(() => {});
   };
