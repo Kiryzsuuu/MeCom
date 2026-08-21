@@ -160,9 +160,9 @@
       <div class="alert alert-info"  id="info-msg"></div>
 
       <div class="field">
-        <label for="inp-email">ENIK</label>
-        <input type="text" id="inp-email" placeholder="Masukkan ENIK Anda"
-          autocomplete="username" inputmode="numeric" onkeydown="onEnter(event)">
+        <label for="inp-email">Email</label>
+        <input type="email" id="inp-email" placeholder="Masukkan email Anda"
+          autocomplete="username" onkeydown="onEnter(event)">
       </div>
 
       <div class="field">
@@ -303,7 +303,7 @@ async function doLogin() {
 
   clearAlerts();
 
-  if (!email)    { showError('ENIK wajib diisi.');    return; }
+  if (!email)    { showError('Email wajib diisi.');    return; }
   if (!password) { showError('Password wajib diisi.'); return; }
 
   var captcha = (document.getElementById('inp-captcha').value || '').trim();

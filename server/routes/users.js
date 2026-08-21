@@ -67,9 +67,11 @@ router.get('/dosen-direktorat/:id', auth, async (req, res) => {
 
 // POST /api/users — Sekretaris CoE/Wakil Direktur CoE/Direktur CoE buat user baru
 router.post('/', auth, requireRole('sekretaris_coe'), async (req, res) => {
-  const { namaLengkap, email, role, direktoratId, nomorWa } = req.body;
+  const { namaLengkap, email, password, role, direktoratId, nomorWa } = req.body;
   if (!namaLengkap || !email || !role)
     return res.status(400).json({ message: 'Nama, email, dan role wajib diisi' });
+  if (password && password.length < 6)
+    return res.status(400).json({ message: 'Password minimal 6 karakter' });
 
   // Hanya level top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) yang bisa buat akun top-tier baru
   if (TOP_TIER_ROLES.includes(role) && !TOP_TIER_ROLES.includes(req.user.role))
@@ -81,21 +83,27 @@ router.post('/', auth, requireRole('sekretaris_coe'), async (req, res) => {
   const existing = await User.findOne({ email: email.toLowerCase() });
   if (existing) return res.status(400).json({ message: 'Email sudah terdaftar' });
 
-  const tempPassword = crypto.randomBytes(6).toString('hex');
+  // Pakai password yang diketik admin di form kalau ada; kalau kosong, generate random & kirim via email
+  const usedGeneratedPassword = !password;
+  const finalPassword = password || crypto.randomBytes(6).toString('hex');
+
   const user = await User.create({
     namaLengkap,
     email,
-    passwordHash: tempPassword,
+    passwordHash: finalPassword,
     role,
     direktoratId: TOP_TIER_ROLES.includes(role) ? null : direktoratId,
     nomorWa: nomorWa || null,
     isFirstLogin: true,
   });
 
-  await mailPasswordReset(user, tempPassword);
+  if (usedGeneratedPassword) await mailPasswordReset(user, finalPassword);
 
   audit.log(req, 'user.create', { target:'User', targetId: user._id, detail: { email, role } });
-  res.status(201).json({ message: 'User berhasil dibuat, password dikirim via email', user: user.toPublic() });
+  res.status(201).json({
+    message: usedGeneratedPassword ? 'User berhasil dibuat, password dikirim via email' : 'User berhasil dibuat',
+    user: user.toPublic(),
+  });
 });
 
 // PUT /api/users/me — shortcut untuk edit profil sendiri

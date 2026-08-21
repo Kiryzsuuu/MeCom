@@ -16,14 +16,12 @@ function genOTP() {
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
-  const { email: enik, password } = req.body;
-  if (!enik || !password)
-    return res.status(400).json({ message: 'ENIK dan password wajib diisi' });
+  const { email, password } = req.body;
+  if (!email || !password)
+    return res.status(400).json({ message: 'Email dan password wajib diisi' });
 
-  const val  = enik.trim();
-  const user = await User.findOne({
-    $or: [{ enik: val }, { email: val.toLowerCase() }],
-  }).populate('direktoratId');
+  const val  = email.trim().toLowerCase();
+  const user = await User.findOne({ email: val }).populate('direktoratId');
   if (!user)
     return res.status(401).json({ message: 'Email atau password salah' });
   if (!user.statusAktif)
