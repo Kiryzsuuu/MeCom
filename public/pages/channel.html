@@ -2246,9 +2246,12 @@ async function applyBgToStream() {
   if (!bgRawTrack && currentTrack) bgRawTrack = currentTrack;
   if (!bgRawTrack) return;
 
-  // Lepas track olahan sebelumnya (kalau ada) dari publikasi, JANGAN stop bgRawTrack (kamera mentah)
-  if (camPub && currentTrack !== bgRawTrack) {
-    await lkRoom.localParticipant.unpublishTrack(camPub.track, true).catch(() => {});
+  // Selalu lepas publikasi kamera yang sedang aktif (mentah ATAU hasil olahan
+  // sebelumnya) supaya track baru bisa dipublish sebagai gantinya — tapi JANGAN
+  // stop bgRawTrack itu sendiri (kamera mentah, dipakai ulang sbg sumber canvas).
+  if (camPub) {
+    const shouldStopTrack = currentTrack !== bgRawTrack;
+    await lkRoom.localParticipant.unpublishTrack(camPub.track, shouldStopTrack).catch(() => {});
   }
   stopBgProcessing();
 
