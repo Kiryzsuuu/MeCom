@@ -1702,7 +1702,8 @@ function camCaptureOptions() {
 
 // Update badge mic-off di tile (avatar-only ATAU video) tanpa perlu bikin ulang tile-nya
 function setTileMicBadge(userId, muted) {
-  const tile = document.getElementById('vtile-p-' + userId) || document.getElementById('vtile-' + userId);
+  const tile = document.getElementById('vtile-p-' + userId) || document.getElementById('vtile-' + userId)
+    || (userId === me._id ? document.getElementById('vtile-me') : null);
   if (!tile) return;
   let badge = tile.querySelector('.vt-mic-off');
   if (muted) {
@@ -1852,6 +1853,7 @@ async function enterVoice() {
 
   voiceParticipants = {};
   addMyVideoTile();
+  setTileMicBadge(me._id, isMuted);
   renderVoiceParticipants();
   updateVoiceUI();
 
@@ -1949,6 +1951,8 @@ async function toggleMute() {
   if (!inVoice) return;
   isMuted = !isMuted;
   try { await lkRoom?.localParticipant.setMicrophoneEnabled(!isMuted, micCaptureOptions()); } catch (e) {}
+  setTileMicBadge(me._id, isMuted);
+  renderVoiceParticipants();
   updateVoiceUI();
 }
 
@@ -1959,6 +1963,8 @@ function toggleDeafen() {
   if (isDeafened && !isMuted) {
     isMuted = true;
     lkRoom?.localParticipant.setMicrophoneEnabled(false).catch(() => {});
+    setTileMicBadge(me._id, true);
+    renderVoiceParticipants();
   }
   updateVoiceUI();
 }
