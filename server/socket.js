@@ -39,6 +39,21 @@ function initSocket(server) {
       });
     });
 
+    // ── Voice live caption relay (speech-to-text jalan lokal per orang di
+    // browser masing-masing, ini cuma relay teksnya ke peserta voice lain) ──
+    socket.on('voice:join-captions', ({ channelId }) => {
+      if (channelId) socket.join(`voice-cc:${channelId}`);
+    });
+    socket.on('voice:leave-captions', ({ channelId }) => {
+      if (channelId) socket.leave(`voice-cc:${channelId}`);
+    });
+    socket.on('voice:caption', ({ channelId, text }) => {
+      if (!channelId || !text) return;
+      socket.to(`voice-cc:${channelId}`).emit('voice:caption', {
+        userId: socket.userId, name: socket.userName, text: String(text).slice(0, 500),
+      });
+    });
+
     // ── Task chat room ────────────────────────────────────────────────────────
     socket.on('task:join', ({ taskId }) => {
       if (taskId) socket.join(`task:${taskId}`);

@@ -391,6 +391,13 @@
       padding: 3px 10px; border-radius: 100px; backdrop-filter: blur(6px);
       display: flex; align-items: center; gap: 5px; pointer-events: none;
     }
+    .vt-caption {
+      position: absolute; bottom: 40px; left: 10px; right: 10px; z-index: 4;
+      background: rgba(0,0,0,.72); color: #fff; font-size: 12px; line-height: 1.4;
+      padding: 5px 10px; border-radius: 8px; text-align: center;
+      max-height: 54px; overflow: hidden; pointer-events: none;
+    }
+    .vt-caption:empty { display: none; }
     .mood-badge {
       position: absolute; top: 10px; left: 10px; z-index: 3;
       background: rgba(0,0,0,.65); backdrop-filter: blur(6px);
@@ -675,6 +682,12 @@
             <button class="vc-mini-btn" id="vc-screen" onclick="toggleScreenShare()" title="Share Screen">
               <i class="ti ti-screen-share"></i>
             </button>
+            <button class="vc-mini-btn" id="vc-caption" onclick="toggleCaptions()" title="Subtitle">
+              <i class="ti ti-closed-captioning"></i>
+            </button>
+            <button class="vc-mini-btn" id="vc-record" onclick="toggleRecording()" title="Rekam">
+              <i class="ti ti-player-record"></i>
+            </button>
             <button class="vc-mini-btn" onclick="openVoiceSettings()" title="Pengaturan Audio/Video">
               <i class="ti ti-settings"></i>
             </button>
@@ -722,6 +735,10 @@
         <div class="cb-btn-label">Share</div>
       </div>
       <div class="cb-btn-wrap">
+        <button class="cb-btn" id="cb-record" onclick="toggleRecording()" title="Rekam"><i class="ti ti-player-record"></i></button>
+        <div class="cb-btn-label">Rekam</div>
+      </div>
+      <div class="cb-btn-wrap">
         <button class="cb-btn" onclick="openVoiceSettings()" title="Pengaturan"><i class="ti ti-settings"></i></button>
         <div class="cb-btn-label">Setting</div>
       </div>
@@ -732,10 +749,17 @@
     </div>
     <div class="call-bar-extras">
       <button class="cb-small" id="cb-deafen" onclick="toggleDeafen()"><i class="ti ti-headphones"></i> Deafen</button>
+      <button class="cb-small" id="cb-caption" onclick="toggleCaptions()"><i class="ti ti-closed-captioning"></i> Subtitle</button>
       <button class="cb-small" id="cb-chat" onclick="toggleCallChat()"><i class="ti ti-message"></i> Chat</button>
+    </div>
+    <div id="record-indicator" style="display:none;position:absolute;top:14px;left:14px;align-items:center;gap:6px;background:rgba(239,68,68,.92);color:#fff;padding:5px 12px;border-radius:100px;font-size:12px;font-weight:700;z-index:5">
+      <span style="width:8px;height:8px;border-radius:50%;background:#fff;animation:recBlink 1.2s infinite"></span>
+      <span>REC</span>
+      <span id="record-timer">00:00</span>
     </div>
   </div>
 </div>
+<style>@keyframes recBlink{0%,100%{opacity:1}50%{opacity:.2}}</style>
 
 <!-- Voice Lobby (pra-join, ala Zoom/Meet) -->
 <div id="voice-lobby">
@@ -1569,6 +1593,11 @@ function getSocket() {
     typingTimeouts[userId] = setTimeout(() => clearTypingFor(userId), 3000);
   });
 
+  socket.on('voice:caption', ({ userId, name, text }) => {
+    if (userId === me._id) return; // suara sendiri sudah ditampilkan lokal tanpa delay
+    showCaptionOnTile(userId, name, text);
+  });
+
   return socket;
 }
 
@@ -1582,6 +1611,17 @@ let isVideoOn  = false;
 let inVoice    = false;
 let isScreenSharing   = false;
 let voiceParticipants = {}; // { userId: { userId, name, photo, muted, videoOn, isSelf } }
+
+// ── Rekam & Subtitle ─────────────────────────────────────────────────────────
+let isRecording = false;
+let mediaRecorder = null, recordedChunks = [];
+let recordAudioCtx = null, recordAudioDest = null;
+let recordCanvas = null, recordCanvasCtx = null;
+let recordTimerInterval = null, recordStartTime = null, recordLoopActive = false;
+
+let captionEnabled = false;
+let speechRecognizer = null;
+let captionTimers = {};
 
 async function joinVoice() {
   if (inVoice) { showCallView(); return; }
@@ -1918,6 +1958,9 @@ async function enterVoice() {
       await lkRoom.localParticipant.setCameraEnabled(true, camCaptureOptions());
       updateMyVideoTile(true);
     }
+
+    getSocket().emit('voice:join-captions', { channelId: VOICE_ROOM_ID });
+    startSpeechCapture();
   } catch (err) {
     showToast('Gagal terhubung ke voice: ' + (err?.message || err), 'error');
     leaveVoice();
@@ -1938,6 +1981,10 @@ function leaveVoice() {
   stopBgProcessing();
   bgRawTrack = null;
   isScreenSharing = false;
+
+  if (isRecording) stopRecording();
+  stopSpeechCapture();
+  socket?.emit('voice:leave-captions', { channelId: VOICE_ROOM_ID });
 
   document.querySelectorAll('audio[id^="audio-"]').forEach(a => a.remove());
 
@@ -2116,6 +2163,222 @@ function addScreenTile(id, track) {
   }
   track.attach(tile.querySelector('video'));
   grid.classList.add('active');
+}
+
+// ── Rekam panggilan (client-side — gambar semua tile + audio semua peserta,
+// disimpan ke folder pilihan sendiri lewat file picker browser) ───────────────
+async function toggleRecording() {
+  if (isRecording) stopRecording();
+  else await startRecording();
+}
+
+async function startRecording() {
+  if (!inVoice || !lkRoom) { showToast('Masuk voice dulu sebelum merekam', 'error'); return; }
+  if (typeof MediaRecorder === 'undefined') { showToast('Browser ini tidak mendukung fitur rekam', 'error'); return; }
+
+  try {
+    recordAudioCtx  = new AudioContext();
+    recordAudioDest = recordAudioCtx.createMediaStreamDestination();
+
+    // Suara sendiri
+    const localMicPub = lkRoom.localParticipant.getTrackPublication(LivekitClient.Track.Source.Microphone);
+    if (localMicPub?.track?.mediaStreamTrack) {
+      try {
+        recordAudioCtx.createMediaStreamSource(new MediaStream([localMicPub.track.mediaStreamTrack])).connect(recordAudioDest);
+      } catch (e) {}
+    }
+    // Suara semua peserta lain yang sedang terdengar
+    document.querySelectorAll('audio[id^="audio-"]').forEach((audioEl) => {
+      try { recordAudioCtx.createMediaStreamSource(audioEl.srcObject).connect(recordAudioDest); } catch (e) {}
+    });
+
+    recordCanvas = document.createElement('canvas');
+    recordCanvas.width = 1280; recordCanvas.height = 720;
+    recordCanvasCtx = recordCanvas.getContext('2d');
+    recordLoopActive = true;
+    recordDrawLoop();
+
+    const videoTrack = recordCanvas.captureStream(30).getVideoTracks()[0];
+    const audioTrack = recordAudioDest.stream.getAudioTracks()[0];
+    const combined = new MediaStream([videoTrack, ...(audioTrack ? [audioTrack] : [])]);
+
+    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') ? 'video/webm;codecs=vp9,opus' : 'video/webm';
+    mediaRecorder = new MediaRecorder(combined, { mimeType, videoBitsPerSecond: 2500000 });
+    recordedChunks = [];
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = saveRecording;
+    mediaRecorder.start(1000);
+
+    isRecording = true;
+    recordStartTime = Date.now();
+    updateRecordUI();
+    recordTimerInterval = setInterval(updateRecordTimerText, 1000);
+    showToast('Rekaman dimulai');
+  } catch (err) {
+    showToast('Gagal memulai rekaman: ' + err.message, 'error');
+    cleanupRecordingResources();
+  }
+}
+
+function recordDrawLoop() {
+  if (!recordLoopActive || !recordCanvasCtx) return;
+  const ctx = recordCanvasCtx, w = recordCanvas.width, h = recordCanvas.height;
+  ctx.fillStyle = '#18181B'; ctx.fillRect(0, 0, w, h);
+
+  const tiles = [...document.querySelectorAll('#call-grid .video-tile')].filter(t => t.querySelector('video'));
+  const n = tiles.length || 1;
+  const cols = Math.ceil(Math.sqrt(n));
+  const rows = Math.ceil(n / cols);
+  const cellW = w / cols, cellH = h / rows;
+
+  tiles.forEach((tile, i) => {
+    const vid = tile.querySelector('video');
+    if (!vid || vid.readyState < 2 || !vid.videoWidth) return;
+    const col = i % cols, row = Math.floor(i / cols);
+    const x = col * cellW, y = row * cellH;
+
+    const vAspect = vid.videoWidth / vid.videoHeight;
+    const cAspect = cellW / cellH;
+    let sx, sy, sw, sh;
+    if (vAspect > cAspect) { sh = vid.videoHeight; sw = sh * cAspect; sx = (vid.videoWidth - sw) / 2; sy = 0; }
+    else { sw = vid.videoWidth; sh = sw / cAspect; sx = 0; sy = (vid.videoHeight - sh) / 2; }
+    try { ctx.drawImage(vid, sx, sy, sw, sh, x, y, cellW, cellH); } catch (e) {}
+
+    const name = tile.querySelector('.vt-name')?.textContent?.trim();
+    if (name) {
+      ctx.font = '13px sans-serif';
+      const tw = ctx.measureText(name).width;
+      ctx.fillStyle = 'rgba(0,0,0,.6)';
+      ctx.fillRect(x + 8, y + cellH - 28, tw + 16, 22);
+      ctx.fillStyle = '#fff';
+      ctx.fillText(name, x + 16, y + cellH - 12);
+    }
+  });
+
+  requestAnimationFrame(recordDrawLoop);
+}
+
+function stopRecording() {
+  if (!isRecording) return;
+  isRecording = false;
+  recordLoopActive = false;
+  clearInterval(recordTimerInterval);
+  try { mediaRecorder?.stop(); } catch (e) {}
+  updateRecordUI();
+}
+
+function cleanupRecordingResources() {
+  isRecording = false;
+  recordLoopActive = false;
+  clearInterval(recordTimerInterval);
+  try { recordAudioCtx?.close(); } catch (e) {}
+  recordAudioCtx = null; recordAudioDest = null;
+  recordCanvas = null; recordCanvasCtx = null;
+  mediaRecorder = null;
+  updateRecordUI();
+}
+
+async function saveRecording() {
+  const blob = new Blob(recordedChunks, { type: 'video/webm' });
+  recordedChunks = [];
+  const filename = `WorkPulse-Voice-${new Date().toISOString().replace(/[:.]/g, '-')}.webm`;
+
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'Video WebM', accept: { 'video/webm': ['.webm'] } }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      showToast('Rekaman disimpan');
+    } catch (err) {
+      if (err.name !== 'AbortError') showToast('Gagal menyimpan rekaman: ' + err.message, 'error');
+    }
+  } else {
+    // Browser tidak dukung File System Access API (mis. Firefox) — fallback unduh biasa
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    showToast('Rekaman diunduh ke folder Downloads (browser ini tidak dukung pilih folder manual)');
+  }
+
+  cleanupRecordingResources();
+}
+
+function updateRecordUI() {
+  ['vc-record', 'cb-record'].forEach((id) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.className = (id === 'vc-record' ? 'vc-mini-btn' : 'cb-btn') + (isRecording ? ' off' : '');
+    btn.innerHTML = `<i class="ti ${isRecording ? 'ti-player-stop-filled' : 'ti-player-record'}"></i>`;
+  });
+  const indicator = document.getElementById('record-indicator');
+  if (indicator) indicator.style.display = isRecording ? 'flex' : 'none';
+  if (isRecording) updateRecordTimerText();
+}
+
+function updateRecordTimerText() {
+  const el = document.getElementById('record-timer');
+  if (!el || !recordStartTime) return;
+  const sec = Math.floor((Date.now() - recordStartTime) / 1000);
+  el.textContent = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+}
+
+// ── Subtitle live (speech-to-text lokal per orang, disiarkan ke peserta lain) ──
+function toggleCaptions() {
+  captionEnabled = !captionEnabled;
+  document.getElementById('vc-caption')?.classList.toggle('off', captionEnabled);
+  document.getElementById('cb-caption')?.classList.toggle('on', captionEnabled);
+  document.querySelectorAll('.vt-caption').forEach((el) => { if (!captionEnabled) el.textContent = ''; });
+  showToast(captionEnabled ? 'Subtitle diaktifkan' : 'Subtitle dimatikan');
+}
+
+function startSpeechCapture() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return; // browser tidak mendukung (mis. Firefox) — diam-diam skip
+  try {
+    speechRecognizer = new SR();
+    speechRecognizer.continuous = true;
+    speechRecognizer.interimResults = true;
+    speechRecognizer.lang = 'id-ID';
+    speechRecognizer.onresult = (e) => {
+      let text = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) text += e.results[i][0].transcript;
+      text = text.trim();
+      if (text) {
+        getSocket().emit('voice:caption', { channelId: VOICE_ROOM_ID, text });
+        showCaptionOnTile(me._id, me.namaLengkap, text);
+      }
+    };
+    speechRecognizer.onerror = () => {};
+    speechRecognizer.onend = () => {
+      if (inVoice && speechRecognizer) { try { speechRecognizer.start(); } catch (e) {} }
+    };
+    speechRecognizer.start();
+  } catch (e) {}
+}
+
+function stopSpeechCapture() {
+  if (speechRecognizer) {
+    speechRecognizer.onend = null;
+    try { speechRecognizer.stop(); } catch (e) {}
+    speechRecognizer = null;
+  }
+}
+
+function showCaptionOnTile(userId, name, text) {
+  const tile = document.getElementById('vtile-p-' + userId) || document.getElementById('vtile-' + userId)
+    || (userId === me._id ? document.getElementById('vtile-me') : null);
+  if (!tile) return;
+  let cap = tile.querySelector('.vt-caption');
+  if (!cap) { cap = document.createElement('div'); cap.className = 'vt-caption'; tile.appendChild(cap); }
+  cap.textContent = captionEnabled ? text : '';
+  clearTimeout(captionTimers[userId]);
+  captionTimers[userId] = setTimeout(() => { cap.textContent = ''; }, 4000);
 }
 
 // ── Voice Settings State ───────────────────────────────────────────────────────
