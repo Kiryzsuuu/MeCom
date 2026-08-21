@@ -571,6 +571,7 @@ function startCall(withVideo) {
   callState     = 'outgoing';
 
   showCallOverlay('outgoing');
+  playRingback();
   dmSocket()?.emit('call:invite', {
     targetUserId: callPeerId, conversationId: callConvId,
     callerName: me.namaLengkap, callerPhoto: me.fotoProfil,
@@ -634,6 +635,7 @@ async function joinCallRoom() {
 
     const { token, url } = await Voice.token('call-' + callConvId);
     await callLkRoom.connect(url, token);
+    callLkRoom.startAudio().catch(() => {});
 
     await callLkRoom.localParticipant.setMicrophoneEnabled(true);
     if (callWithVideo) {
@@ -683,6 +685,22 @@ function wireCallRoomEvents(room) {
   room.on(RoomEvent.Disconnected, () => {
     if (callState !== 'idle') endCallCleanup();
   });
+
+  room.on(RoomEvent.AudioPlaybackStatusChanged, () => {
+    showCallAudioUnlockBanner(!room.canPlaybackAudio);
+  });
+}
+
+function showCallAudioUnlockBanner(show) {
+  let banner = document.getElementById('call-audio-unlock-banner');
+  if (!show) { banner?.remove(); return; }
+  if (banner) return;
+  banner = document.createElement('button');
+  banner.id = 'call-audio-unlock-banner';
+  banner.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:2100;background:#EF4444;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.25)';
+  banner.innerHTML = '<i class="ti ti-volume-off" style="margin-right:6px"></i> Audio diblokir browser — klik untuk aktifkan';
+  banner.onclick = () => { callLkRoom?.startAudio().then(() => banner.remove()).catch(() => {}); };
+  document.body.appendChild(banner);
 }
 
 function attachLocalCallVideo() {
@@ -736,6 +754,7 @@ function endCallCleanup() {
   document.getElementById('call-remote-video').innerHTML = '';
   document.getElementById('call-local-video').innerHTML = '';
   document.getElementById('call-remote-audio')?.remove();
+  document.getElementById('call-audio-unlock-banner')?.remove();
 
   callState = 'idle'; callConvId = null; callPeerId = null; callPeerName = null; callPeerPhoto = null; callWithVideo = false;
 }
@@ -763,6 +782,31 @@ function playRingtone() {
   };
   tone();
   ringtoneInterval = setInterval(tone, 1600);
+}
+// Nada tunggu di sisi penelepon (ringback) — pola beep panjang, khas nada sambung
+function playRingback() {
+  stopRingtone();
+  const tone = () => {
+    try {
+      const ctx = new AudioContext();
+      ctx.resume().then(() => {
+        const now = ctx.currentTime;
+        [425].forEach((f) => {
+          const osc = ctx.createOscillator(), gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type = 'sine'; osc.frequency.value = f;
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(0.2, now + 0.05);
+          gain.gain.linearRampToValueAtTime(0.2, now + 0.95);
+          gain.gain.linearRampToValueAtTime(0, now + 1);
+          osc.start(now); osc.stop(now + 1);
+        });
+        setTimeout(() => ctx.close(), 1200);
+      });
+    } catch (e) {}
+  };
+  tone();
+  ringtoneInterval = setInterval(tone, 3000);
 }
 function stopRingtone() {
   if (ringtoneInterval) { clearInterval(ringtoneInterval); ringtoneInterval = null; }
@@ -842,6 +886,7 @@ function initDmSocket() {
   socket.on('call:accepted', (data) => {
     if (callState === 'outgoing' && data.conversationId === callConvId) {
       clearTimeout(callRingTimeout);
+      stopRingtone();
       joinCallRoom();
     }
   });
