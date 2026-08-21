@@ -1184,6 +1184,15 @@ async function loadMoreMessages() {
   await loadMessages(activeChannelId, true);
 }
 
+// Batasi resolusi kerja canvas segmentasi background — proses di resolusi penuh
+// (720p+) cukup berat utk blur+komposit tiap frame, 480px lebar sudah lebih dari
+// cukup buat tampilan tile video call.
+function capDims(w, h, maxW) {
+  if (!w || !h || w <= maxW) return { w: w || maxW, h: h || Math.round(maxW * 9 / 16) };
+  const scale = maxW / w;
+  return { w: maxW, h: Math.round(h * scale) };
+}
+
 function avColorForName(name) {
   const inits = (name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   const avColors = ['#0E7C91','#16A34A','#EA580C','#0D9488','#DB2777'];
@@ -2125,6 +2134,16 @@ async function openVoiceSettings() {
   document.getElementById('vsm-echo').checked  = vsm.echo;
   document.getElementById('vsm-agc').checked   = vsm.agc;
   document.querySelectorAll('.vsm-bg-card').forEach(c => c.classList.toggle('selected', c.dataset.bg === vsm.bgMode));
+
+  // Kalau kamera sudah nyala di call tapi vsm.camId belum pernah diisi (user
+  // nyalain kamera lewat tombol utama, bukan lewat Setting), sinkronkan dulu
+  // supaya dropdown "Video & Kamera"/"Background" tidak kelihatan "Nonaktif".
+  if (!vsm.camId && isVideoOn) {
+    const camPub = lkRoom?.localParticipant?.getTrackPublication(LivekitClient.Track.Source.Camera);
+    const liveDeviceId = camPub?.track?.mediaStreamTrack?.getSettings()?.deviceId;
+    if (liveDeviceId) vsm.camId = liveDeviceId;
+  }
+
   await populateDevices();
   startMicPreview();
 }
@@ -2201,9 +2220,10 @@ async function startBgPreview() {
     await new Promise(r => { vid.onloadedmetadata = r; });
     await vid.play().catch(() => {});
 
+    const dims = capDims(vid.videoWidth, vid.videoHeight, 480);
     const canvas = document.createElement('canvas');
-    canvas.width  = vid.videoWidth  || 640;
-    canvas.height = vid.videoHeight || 480;
+    canvas.width  = dims.w;
+    canvas.height = dims.h;
     canvas.style.cssText = 'transform:scaleX(-1);width:100%;height:100%;object-fit:cover';
     preview.innerHTML = '';
     preview.appendChild(canvas);
@@ -2264,9 +2284,10 @@ async function applyBgToStream() {
     await new Promise(r => { bgVideoEl.onloadedmetadata = r; });
     await bgVideoEl.play().catch(() => {});
 
+    const dims = capDims(bgVideoEl.videoWidth, bgVideoEl.videoHeight, 640);
     bgCanvas = document.createElement('canvas');
-    bgCanvas.width  = bgVideoEl.videoWidth  || 640;
-    bgCanvas.height = bgVideoEl.videoHeight || 480;
+    bgCanvas.width  = dims.w;
+    bgCanvas.height = dims.h;
 
     bgSegmentProcessor = window.BgSegment?.createProcessor(bgVideoEl, bgCanvas, () => vsm.bgMode, () => bgImageEl);
 

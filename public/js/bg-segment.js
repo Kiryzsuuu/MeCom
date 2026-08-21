@@ -8,7 +8,7 @@
 (function () {
   const MODEL_URL  = 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/1/selfie_segmenter.tflite';
   const VISION_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
-  const FRAME_MS   = 100; // ~10fps segmentasi — cukup halus, jauh lebih ringan dari 60fps
+  const FRAME_MS   = 200; // ~5fps segmentasi — background relatif statis, tidak perlu lebih cepat
 
   let segmenterPromise = null;
 
