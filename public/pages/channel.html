@@ -944,6 +944,7 @@
 <script src="/js/webpush.js"></script>
 <script src="/js/dialogs.js"></script>
 <script src="/js/mood-detect.js"></script>
+<script src="/js/bg-segment.js"></script>
 <script>
 if (!requireAuth()) throw 'redirect';
 const me = getUser();
@@ -2093,14 +2094,15 @@ function addScreenTile(id, track) {
 let vsm = { micId: null, spkId: null, camId: null, micVol: 100, spkVol: 100,
             noise: true, echo: true, agc: true, bgMode: 'none', bgImageSrc: null };
 let vsmStream = null; let vsmAnalyser = null; let vsmAnimFrame = null;
-let vsmBgStream = null; let vsmBgAnimFrame = null;
+let vsmBgStream = null; let vsmBgProcessor = null;
+let bgImageEl = null; // <img> preloaded untuk mode 'upload', dipakai preview & live
 
 // Mic gain (applied during call)
 let micGainCtx = null; let micGainNode = null;
 
-// Background processing (canvas stream)
-let bgCanvas = null; let bgCtx2d = null;
-let bgProcessedStream = null; let bgAnimFrame = null; let bgVideoEl = null;
+// Background processing (canvas stream, live call)
+let bgCanvas = null; let bgSegmentProcessor = null;
+let bgProcessedStream = null; let bgVideoEl = null;
 let bgRawTrack = null; // MediaStreamTrack kamera mentah, sumber canvas
 
 function switchVsmTab(tab, btn) {
@@ -2190,37 +2192,32 @@ async function startBgPreview() {
   const preview = document.getElementById('vsm-bg-preview');
   if (!preview || !camId) { if(preview) preview.innerHTML = '<span class="vsm-preview-placeholder"><i class="ti ti-video-off"></i></span>'; return; }
   try {
+    vsmBgProcessor?.stop(); vsmBgProcessor = null;
     if (vsmBgStream) vsmBgStream.getTracks().forEach(t => t.stop());
     vsmBgStream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: camId } } });
+
     const vid = document.createElement('video');
     vid.srcObject = vsmBgStream; vid.autoplay = true; vid.muted = true; vid.playsInline = true;
-    vid.style.cssText = 'transform:scaleX(-1);width:100%;height:100%;object-fit:cover';
-    preview.innerHTML = ''; preview.appendChild(vid);
-    applyBgToPreview(vid, preview);
-  } catch(e) {}
-}
+    await new Promise(r => { vid.onloadedmetadata = r; });
+    await vid.play().catch(() => {});
 
-function applyBgToPreview(vid, container) {
-  if (vsmBgAnimFrame) { cancelAnimationFrame(vsmBgAnimFrame); vsmBgAnimFrame = null; }
-  const mode = vsm.bgMode;
-  if (mode === 'none') { vid.style.filter = ''; return; }
-  if (mode === 'blur') { vid.style.filter = 'blur(12px)'; return; }
-  if (mode.startsWith('color:')) { vid.style.filter = ''; vid.style.display = 'none';
-    const div = document.createElement('div');
-    div.style.cssText = `position:absolute;inset:0;background:${mode.slice(6)}`;
-    container.appendChild(div); return; }
-  if (mode === 'upload' && vsm.bgImageSrc) {
-    vid.style.filter = ''; vid.style.display = 'none';
-    const img = document.createElement('img');
-    img.src = vsm.bgImageSrc; img.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0';
-    container.appendChild(img); return;
-  }
+    const canvas = document.createElement('canvas');
+    canvas.width  = vid.videoWidth  || 640;
+    canvas.height = vid.videoHeight || 480;
+    canvas.style.cssText = 'transform:scaleX(-1);width:100%;height:100%;object-fit:cover';
+    preview.innerHTML = '';
+    preview.appendChild(canvas);
+
+    // Video mentah tetap jadi sumber frame (tidak ditampilkan langsung, cuma dipakai
+    // sebagai input segmentasi) — canvas di atas yang menampilkan hasil komposit.
+    vsmBgProcessor = window.BgSegment?.createProcessor(vid, canvas, () => vsm.bgMode, () => bgImageEl);
+  } catch(e) {}
 }
 
 function stopVsmPreview() {
   if (vsmAnimFrame) { cancelAnimationFrame(vsmAnimFrame); vsmAnimFrame = null; }
-  if (vsmBgAnimFrame) { cancelAnimationFrame(vsmBgAnimFrame); vsmBgAnimFrame = null; }
   vsmAnalyser = null;
+  vsmBgProcessor?.stop(); vsmBgProcessor = null;
   if (vsmStream) { vsmStream.getTracks().forEach(t => t.stop()); vsmStream = null; }
   if (vsmBgStream) { vsmBgStream.getTracks().forEach(t => t.stop()); vsmBgStream = null; }
 }
@@ -2229,14 +2226,15 @@ function selectBg(mode, card) {
   vsm.bgMode = mode;
   document.querySelectorAll('.vsm-bg-card').forEach(c => c.classList.remove('selected'));
   card.classList.add('selected');
-  startBgPreview();
+  // vsmBgProcessor baca vsm.bgMode langsung tiap frame — cukup ganti state, tidak perlu restart
+  if (!vsmBgProcessor) startBgPreview();
 }
 
 // ── Background processing on live LiveKit camera track ─────────────────────────
 function stopBgProcessing() {
-  if (bgAnimFrame) { cancelAnimationFrame(bgAnimFrame); bgAnimFrame = null; }
+  bgSegmentProcessor?.stop(); bgSegmentProcessor = null;
   if (bgProcessedStream) { bgProcessedStream.getTracks().forEach(t => t.stop()); bgProcessedStream = null; }
-  bgCanvas = null; bgCtx2d = null; bgVideoEl = null;
+  bgCanvas = null; bgVideoEl = null;
 }
 
 async function applyBgToStream() {
@@ -2266,42 +2264,10 @@ async function applyBgToStream() {
     bgCanvas = document.createElement('canvas');
     bgCanvas.width  = bgVideoEl.videoWidth  || 640;
     bgCanvas.height = bgVideoEl.videoHeight || 480;
-    bgCtx2d = bgCanvas.getContext('2d');
 
-    let bgImg = null;
-    if (mode === 'upload' && vsm.bgImageSrc) {
-      bgImg = new Image();
-      bgImg.src = vsm.bgImageSrc;
-      await new Promise(r => { bgImg.onload = r; bgImg.onerror = r; });
-    }
+    bgSegmentProcessor = window.BgSegment?.createProcessor(bgVideoEl, bgCanvas, () => vsm.bgMode, () => bgImageEl);
 
-    const draw = () => {
-      if (!bgCtx2d) return;
-      bgAnimFrame = requestAnimationFrame(draw);
-      const w = bgCanvas.width, h = bgCanvas.height;
-
-      if (mode === 'blur') {
-        bgCtx2d.filter = 'blur(12px)';
-        bgCtx2d.drawImage(bgVideoEl, 0, 0, w, h);
-        bgCtx2d.filter = 'none';
-      } else if (mode.startsWith('color:')) {
-        bgCtx2d.fillStyle = mode.slice(6);
-        bgCtx2d.fillRect(0, 0, w, h);
-        bgCtx2d.globalAlpha = 0.82;
-        bgCtx2d.drawImage(bgVideoEl, 0, 0, w, h);
-        bgCtx2d.globalAlpha = 1;
-      } else if (mode === 'upload' && bgImg) {
-        bgCtx2d.drawImage(bgImg, 0, 0, w, h);
-        bgCtx2d.globalAlpha = 0.82;
-        bgCtx2d.drawImage(bgVideoEl, 0, 0, w, h);
-        bgCtx2d.globalAlpha = 1;
-      } else {
-        bgCtx2d.drawImage(bgVideoEl, 0, 0, w, h);
-      }
-    };
-    draw();
-
-    bgProcessedStream = bgCanvas.captureStream(30);
+    bgProcessedStream = bgCanvas.captureStream(15);
     publishTrack = bgProcessedStream.getVideoTracks()[0];
   }
 
@@ -2315,10 +2281,12 @@ function loadBgUpload(input) {
   reader.onload = e => {
     vsm.bgImageSrc = e.target.result;
     vsm.bgMode = 'upload';
+    bgImageEl = new Image();
+    bgImageEl.src = e.target.result;
     document.querySelectorAll('.vsm-bg-card').forEach(c => c.classList.remove('selected'));
     const card = input.closest('.vsm-bg-card'); if (card) { card.classList.add('selected'); card.dataset.bg = 'upload'; }
     if (card) { card.style.backgroundImage = `url(${e.target.result})`; card.style.backgroundSize = 'cover'; }
-    startBgPreview();
+    if (!vsmBgProcessor) startBgPreview();
   };
   reader.readAsDataURL(file);
 }
@@ -2369,7 +2337,13 @@ async function applyVoiceSettings() {
     } catch(e) { showToast('Gagal menerapkan pengaturan mic: ' + e.message, 'error'); }
 
     // Terapkan virtual background ke stream yang sedang live
-    if (isVideoOn) await applyBgToStream().catch(() => {});
+    if (isVideoOn) {
+      await applyBgToStream().catch(() => {});
+    } else if (vsm.bgMode !== 'none') {
+      closeVoiceSettings();
+      showToast('Pengaturan disimpan — background akan aktif begitu Anda nyalakan kamera');
+      return;
+    }
   }
 
   closeVoiceSettings();
