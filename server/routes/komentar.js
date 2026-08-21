@@ -56,7 +56,7 @@ router.post('/', auth, async (req, res) => {
   push.sendPushMany(pushTargets, {
     title: `📝 Note baru di "${task.judul}"`,
     body:  `${req.user.namaLengkap}: ${isi.slice(0, 80)}`,
-    url:   `/pages/task.html?id=${task._id}`,
+    url:   `/task?id=${task._id}`,
   }).catch(() => {});
 
   await kom.populate('userId', 'namaLengkap fotoProfil role');

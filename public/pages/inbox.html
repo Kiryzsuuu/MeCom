@@ -149,7 +149,7 @@ function renderList(items) {
 
 async function openNotif(id, taskId) {
   try { await Notifikasi.markRead(id); } catch {}
-  if (taskId) window.location.href = `/pages/task.html?id=${taskId}`;
+  if (taskId) window.location.href = `/task?id=${taskId}`;
   else loadNotif();
 }
 

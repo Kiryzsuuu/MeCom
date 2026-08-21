@@ -395,7 +395,7 @@ async function logout() {
   if (!await showConfirm('Keluar dari akun?', { title: 'Keluar', okLabel: 'Keluar', cancelLabel: 'Batal', type: 'warning' })) return;
   try { await Auth.logout(); } catch {}
   clearSession();
-  window.location.href = '/pages/login.html';
+  window.location.href = '/login';
 }
 
 Auth.me().then(({ user }) => {

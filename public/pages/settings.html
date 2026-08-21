@@ -293,7 +293,7 @@
 <script>
 if (!requireAuth()) throw 'redirect';
 const user = getUser();
-if (!['super_admin','sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user.role)) { window.location.href = '/pages/dashboard.html'; throw 'no access'; }
+if (!['super_admin','sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user.role)) { window.location.href = '/dashboard'; throw 'no access'; }
 const TOP_TIER_ROLES = ['super_admin','direktur_coe','wakil_direktur_coe','sekretaris_coe'];
 const isSuperadmin = TOP_TIER_ROLES.includes(user.role);
 
@@ -543,7 +543,7 @@ async function doImpersonate() {
   btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Masuk...';
   try {
     await Auth.impersonate(impersonateTarget.userId);
-    window.location.href = '/pages/dashboard.html';
+    window.location.href = '/dashboard';
   } catch (e) {
     showToast(e.message || 'Gagal melakukan impersonasi', 'error');
     btn.disabled = false;

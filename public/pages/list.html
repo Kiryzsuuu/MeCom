@@ -69,18 +69,18 @@
   <div class="main">
     <div class="topbar">
       <div class="bc">
-        <a href="/pages/dashboard.html">Dashboard</a>
+        <a href="/dashboard">Dashboard</a>
         <span class="bc-sep">/</span>
         <span class="cur">Daftar Task</span>
       </div>
       <div class="topbar-right">
         <div class="view-sw">
-          <a href="/pages/list.html" class="active"><i class="ti ti-list"></i> List</a>
-          <a href="/pages/board.html"><i class="ti ti-layout-kanban"></i> Board</a>
-          <a href="/pages/gantt.html"><i class="ti ti-chart-gantt"></i> Gantt</a>
-          <a href="/pages/calendar.html"><i class="ti ti-calendar-month"></i> Kalender</a>
+          <a href="/list" class="active"><i class="ti ti-list"></i> List</a>
+          <a href="/board"><i class="ti ti-layout-kanban"></i> Board</a>
+          <a href="/gantt"><i class="ti ti-chart-gantt"></i> Gantt</a>
+          <a href="/calendar"><i class="ti ti-calendar-month"></i> Kalender</a>
         </div>
-        <a href="/pages/task-form.html" class="btn btn-primary"><i class="ti ti-plus"></i> <span>Buat Task</span></a>
+        <a href="/task-form" class="btn btn-primary"><i class="ti ti-plus"></i> <span>Buat Task</span></a>
       </div>
     </div>
 
@@ -217,7 +217,7 @@ function renderTable(tasks) {
         <div style="display:flex;align-items:center;gap:10px">
           ${coverHtml}
           <div>
-            <a class="task-link" href="/pages/task.html?id=${t._id}" style="max-width:260px">${t.judul}</a>
+            <a class="task-link" href="/task?id=${t._id}" style="max-width:260px">${t.judul}</a>
             ${isOverdue(t) ? '<span style="color:var(--red);font-size:11px;font-weight:600">⚠ Overdue</span>' : ''}
           </div>
         </div>

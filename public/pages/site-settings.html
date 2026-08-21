@@ -258,7 +258,7 @@
 <script>
 if (!requireAuth()) throw 'redirect';
 const user = getUser();
-if (!['super_admin','direktur_coe','wakil_direktur_coe','sekretaris_coe'].includes(user.role)) { window.location.href = '/pages/dashboard.html'; throw 'no access'; }
+if (!['super_admin','direktur_coe','wakil_direktur_coe','sekretaris_coe'].includes(user.role)) { window.location.href = '/dashboard'; throw 'no access'; }
 
 let features = [];
 

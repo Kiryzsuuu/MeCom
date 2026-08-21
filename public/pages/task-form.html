@@ -93,12 +93,12 @@
   <div class="main">
     <div class="topbar">
       <div class="bc">
-        <a href="/pages/list.html">Task</a>
+        <a href="/list">Task</a>
         <span class="bc-sep">/</span>
         <span class="cur" id="bc-title">Buat Task Baru</span>
       </div>
       <div class="topbar-right">
-        <a href="/pages/list.html" class="btn">Batal</a>
+        <a href="/list" class="btn">Batal</a>
         <button class="btn btn-primary" id="btn-submit" onclick="submitForm()">
           <i class="ti ti-check"></i> <span id="btn-label">Simpan Task</span>
         </button>
@@ -642,12 +642,12 @@ async function submitForm() {
     if (editId) {
       await Tasks.update(editId, payload);
       showToast('Task berhasil diupdate');
-      setTimeout(() => window.location.href = `/pages/task.html?id=${editId}`, 700);
+      setTimeout(() => window.location.href = `/task?id=${editId}`, 700);
     } else {
       payload.subtasks = buildSubtaskPayload(null); // sertakan subtask (nested) saat buat
       const { task } = await Tasks.create(payload);
       showToast('Task berhasil dibuat');
-      setTimeout(() => window.location.href = `/pages/task.html?id=${task._id}`, 700);
+      setTimeout(() => window.location.href = `/task?id=${task._id}`, 700);
     }
   } catch (e) {
     showToast(e.message, 'error');

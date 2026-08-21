@@ -169,7 +169,7 @@
           const sc = STATUS_COLOR[t.status] || '#6B7280';
           const overdueTag = isOverdue(t) ? '<span style="color:#EF4444;font-size:10px;font-weight:700;margin-left:6px">⚠ Overdue</span>' : '';
           html += `
-            <a class="gs-item" href="/pages/task.html?id=${t._id}" onclick="closeGlobalSearch()">
+            <a class="gs-item" href="/task?id=${t._id}" onclick="closeGlobalSearch()">
               <div class="gs-item-icon" style="background:${sc}20">
                 <i class="ti ti-clipboard" style="color:${sc}"></i>
               </div>
@@ -192,7 +192,7 @@
             ? `<img src="${u.fotoProfil}" style="width:32px;height:32px;border-radius:8px;object-fit:cover">`
             : `<div style="width:32px;height:32px;border-radius:8px;background:#5B4FE8;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff">${inits}</div>`;
           html += `
-            <a class="gs-item" href="/pages/list.html?assigneeId=${u._id}" onclick="closeGlobalSearch()">
+            <a class="gs-item" href="/list?assigneeId=${u._id}" onclick="closeGlobalSearch()">
               ${avHtml}
               <div style="flex:1;min-width:0">
                 <div class="gs-item-title">${highlight(u.namaLengkap, q)}</div>

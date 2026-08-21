@@ -100,7 +100,7 @@ async function mailTaskApproved(user, task) {
       <p>Task berikut telah disetujui dan siap dikerjakan:</p>
       <p><strong>${task.judul}</strong></p>
       <p>Deadline: <strong>${new Date(task.deadline).toLocaleDateString('id-ID')}</strong></p>
-      <a href="${process.env.APP_URL}/pages/task.html?id=${task._id}" class="btn">Lihat Task</a>
+      <a href="${process.env.APP_URL}/task?id=${task._id}" class="btn">Lihat Task</a>
     `),
   });
 }
@@ -114,7 +114,7 @@ async function mailTaskRejected(user, task, catatan) {
       <p>Task berikut <strong>ditolak</strong>:</p>
       <p><strong>${task.judul}</strong></p>
       <p>Catatan: <em>${catatan}</em></p>
-      <a href="${process.env.APP_URL}/pages/task.html?id=${task._id}" class="btn">Lihat Task</a>
+      <a href="${process.env.APP_URL}/task?id=${task._id}" class="btn">Lihat Task</a>
     `),
   });
 }
@@ -128,7 +128,7 @@ async function mailTaskRevisi(user, task, catatan) {
       <p>Task berikut dikembalikan untuk revisi:</p>
       <p><strong>${task.judul}</strong></p>
       <p>Catatan revisi: <em>${catatan}</em></p>
-      <a href="${process.env.APP_URL}/pages/task.html?id=${task._id}" class="btn">Kerjakan Revisi</a>
+      <a href="${process.env.APP_URL}/task?id=${task._id}" class="btn">Kerjakan Revisi</a>
     `),
   });
 }
@@ -155,7 +155,7 @@ async function mailDeadlineReminder(user, task, hariSisa) {
       <p>Task berikut akan jatuh tempo dalam <strong>${hariSisa} hari</strong>:</p>
       <p><strong>${task.judul}</strong></p>
       <p>Deadline: <strong>${new Date(task.deadline).toLocaleDateString('id-ID')}</strong></p>
-      <a href="${process.env.APP_URL}/pages/task.html?id=${task._id}" class="btn">Lihat Task</a>
+      <a href="${process.env.APP_URL}/task?id=${task._id}" class="btn">Lihat Task</a>
     `),
   });
 }
@@ -185,7 +185,7 @@ async function mailDailyDigest(user, stats) {
         <li>Task overdue: <strong>${stats.overdue}</strong></li>
         <li>Task deadline hari ini: <strong>${stats.dueToday}</strong></li>
       </ul>
-      <a href="${process.env.APP_URL}/pages/dashboard.html" class="btn">Buka Dashboard</a>
+      <a href="${process.env.APP_URL}/dashboard" class="btn">Buka Dashboard</a>
     `),
   });
 }

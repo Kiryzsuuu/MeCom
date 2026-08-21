@@ -96,18 +96,18 @@
   <div class="main">
     <div class="topbar">
       <div class="bc">
-        <a href="/pages/dashboard.html">Dashboard</a>
+        <a href="/dashboard">Dashboard</a>
         <span class="bc-sep">/</span>
         <span class="cur">Board Kanban</span>
       </div>
       <div class="topbar-right">
         <div class="view-sw">
-          <a href="/pages/list.html"><i class="ti ti-list"></i> List</a>
-          <a href="/pages/board.html" class="active"><i class="ti ti-layout-kanban"></i> Board</a>
-          <a href="/pages/gantt.html"><i class="ti ti-chart-gantt"></i> Gantt</a>
-          <a href="/pages/calendar.html"><i class="ti ti-calendar-month"></i> Kalender</a>
+          <a href="/list"><i class="ti ti-list"></i> List</a>
+          <a href="/board" class="active"><i class="ti ti-layout-kanban"></i> Board</a>
+          <a href="/gantt"><i class="ti ti-chart-gantt"></i> Gantt</a>
+          <a href="/calendar"><i class="ti ti-calendar-month"></i> Kalender</a>
         </div>
-        <a href="/pages/task-form.html" class="btn btn-primary"><i class="ti ti-plus"></i> <span>Buat Task</span></a>
+        <a href="/task-form" class="btn btn-primary"><i class="ti ti-plus"></i> <span>Buat Task</span></a>
       </div>
     </div>
 
@@ -194,7 +194,7 @@ function renderCard(t) {
       draggable="true"
       ondragstart="onDragStart(event,'${t._id}','${t.status}')"
       ondragend="onDragEnd(event)"
-      onclick="window.location='/pages/task.html?id=${t._id}'">
+      onclick="window.location='/task?id=${t._id}'">
       ${od ? `<span class="overdue-mark">⚠ Overdue</span>` : ''}
       <div class="card-title">${t.judul}</div>
       <div class="card-footer">

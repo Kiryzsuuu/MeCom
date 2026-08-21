@@ -952,7 +952,7 @@ function openVoice() {
   const w = 1040, h = 700;
   const left = Math.max(0, (screen.width  - w) / 2);
   const top  = Math.max(0, (screen.height - h) / 2);
-  voicePopup = window.open('/pages/channel.html?voiceOnly=1', 'WorkPulseailoVoice',
+  voicePopup = window.open('/channel?voiceOnly=1', 'WorkPulseailoVoice',
     `popup=yes,width=${w},height=${h},left=${left},top=${top}`);
 
   if (!voicePopup) {

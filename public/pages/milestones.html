@@ -246,7 +246,7 @@ function renderTimeline(milestones) {
 
     const taskChips = tasks.map(t =>
       `<div class="ms-task-chip" style="display:flex;align-items:center;gap:4px">
-        <span onclick="window.location='/pages/task.html?id=${t._id}'" style="cursor:pointer;flex:1">${t.status === 'complete' ? '✓ ' : ''}${t.judul}</span>
+        <span onclick="window.location='/task?id=${t._id}'" style="cursor:pointer;flex:1">${t.status === 'complete' ? '✓ ' : ''}${t.judul}</span>
         ${canEdit ? `<i class="ti ti-x" style="font-size:11px;cursor:pointer;color:var(--text-3)" onclick="removeTaskFromMs('${ms._id}','${t._id}')"></i>` : ''}
       </div>`
     ).join('');

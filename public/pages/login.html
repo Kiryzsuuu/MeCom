@@ -196,7 +196,7 @@
         Masuk
       </button>
       <div style="text-align:center;margin-top:4px">
-        <a href="/pages/forgot-password.html" style="font-size:13px;color:var(--accent);text-decoration:none">Lupa password?</a>
+        <a href="/forgot-password" style="font-size:13px;color:var(--accent);text-decoration:none">Lupa password?</a>
       </div>
     </div>
   </div>
@@ -206,7 +206,7 @@
 <script>
 // Jika sudah login, langsung ke dashboard
 (function checkSession() {
-  try { if (getToken()) window.location.replace('/pages/dashboard.html'); } catch(e) {}
+  try { if (getToken()) window.location.replace('/dashboard'); } catch(e) {}
 })();
 
 // Load settings dari API dan terapkan ke halaman login
@@ -317,9 +317,9 @@ async function doLogin() {
     var data = await Auth.login(email, password);
     if (data && data.user && data.user.isFirstLogin) {
       showInfo('Login pertama! Silakan ganti password di halaman Profil setelah masuk.');
-      setTimeout(function() { window.location.href = '/pages/dashboard.html'; }, 1400);
+      setTimeout(function() { window.location.href = '/dashboard'; }, 1400);
     } else {
-      window.location.href = '/pages/dashboard.html';
+      window.location.href = '/dashboard';
     }
   } catch (err) {
     showError(err && err.message ? err.message : 'Gagal login. Periksa email dan password.');

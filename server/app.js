@@ -65,7 +65,21 @@ app.use('/api/tasks/:taskId/messages', require('./routes/task-messages'));
 
 // Root → redirect ke login
 app.get('/', (req, res) => {
-  res.redirect('/pages/login.html');
+  res.redirect('/login');
+});
+
+// URL bersih: /messages, /dashboard, dst → serve file yang sama di public/pages/*.html
+// (URL lama /pages/xxx.html tetap jalan juga lewat static hosting di atas, tidak dihapus)
+const fs = require('fs');
+const pagesDir = path.join(__dirname, '../public/pages');
+app.get(/^\/([a-z0-9-]+)$/, (req, res, next) => {
+  const name = req.params[0];
+  const file = path.join(pagesDir, `${name}.html`);
+  if (!file.startsWith(pagesDir)) return next(); // guard path traversal
+  fs.access(file, fs.constants.F_OK, (err) => {
+    if (err) return next();
+    res.sendFile(file);
+  });
 });
 
 // Fallback untuk path yang tidak ditemukan
@@ -74,7 +88,7 @@ app.use((req, res) => {
     return res.status(404).json({ message: 'Endpoint tidak ditemukan' });
   }
   // Redirect ke login untuk path HTML yang tidak ada
-  res.redirect('/pages/login.html');
+  res.redirect('/login');
 });
 
 // Global error handler

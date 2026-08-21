@@ -87,7 +87,7 @@ function startCronJobs() {
           await notifSvc.notifOverdue(pic, task).catch(() => {});
           push.sendPush(pic._id, {
             title: '⚠ Task Overdue', body: `${task.judul} sudah lewat deadline — segera selesaikan`,
-            url: `/pages/task.html?id=${task._id}`,
+            url: `/task?id=${task._id}`,
           }).catch(() => {});
         }
         const namaAssignee = assignees.map(a => a.namaLengkap).join(', ') || '-';

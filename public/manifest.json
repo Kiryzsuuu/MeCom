@@ -2,18 +2,18 @@
   "name": "WorkPulse AILO",
   "short_name": "AILO",
   "description": "Task Management & KPI Tracker",
-  "start_url": "/pages/dashboard.html",
+  "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#F6F6F8",
-  "theme_color": "#5B4FE8",
+  "theme_color": "#0E7C91",
   "lang": "id",
   "icons": [
     { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ],
   "shortcuts": [
-    { "name": "Buat Task", "short_name": "Buat", "url": "/pages/task-form.html", "icons": [{ "src": "/icons/icon.svg", "sizes": "any" }] },
-    { "name": "Board Kanban", "short_name": "Board", "url": "/pages/board.html", "icons": [{ "src": "/icons/icon.svg", "sizes": "any" }] }
+    { "name": "Buat Task", "short_name": "Buat", "url": "/task-form", "icons": [{ "src": "/icons/icon.svg", "sizes": "any" }] },
+    { "name": "Board Kanban", "short_name": "Board", "url": "/board", "icons": [{ "src": "/icons/icon.svg", "sizes": "any" }] }
   ]
 }

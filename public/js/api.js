@@ -36,7 +36,7 @@ function clearSession() {
 
 function requireAuth() {
   if (!getToken()) {
-    window.location.href = '/pages/login.html';
+    window.location.href = '/login';
     return false;
   }
   return true;
@@ -51,7 +51,7 @@ async function apiFetch(path, options = {}) {
 
   if (res.status === 401 && !path.startsWith('/auth/login')) {
     clearSession();
-    window.location.href = '/pages/login.html';
+    window.location.href = '/login';
     throw new Error('Sesi berakhir, silakan login kembali');
   }
 
@@ -69,7 +69,7 @@ async function apiUpload(path, formData) {
 
   if (res.status === 401) {
     clearSession();
-    window.location.href = '/pages/login.html';
+    window.location.href = '/login';
     throw new Error('Sesi berakhir');
   }
 
@@ -94,7 +94,7 @@ const Auth = {
     localStorage.removeItem('wt_token_real');
     localStorage.removeItem('wt_user_real');
     localStorage.removeItem('wt_impersonated_by');
-    window.location.href = '/pages/login.html';
+    window.location.href = '/login';
   },
   async impersonate(userId) {
     const data = await apiFetch('/auth/impersonate/' + userId, { method: 'POST' });

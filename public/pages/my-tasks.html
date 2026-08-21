@@ -77,7 +77,7 @@
     <div class="topbar">
       <div class="bc"><span class="cur">My Tasks</span></div>
       <div class="topbar-right">
-        <a href="/pages/task-form.html" class="btn btn-primary"><i class="ti ti-plus"></i> Buat Task</a>
+        <a href="/task-form" class="btn btn-primary"><i class="ti ti-plus"></i> Buat Task</a>
       </div>
     </div>
 
@@ -229,7 +229,7 @@ function taskCard(t) {
     : '';
 
   return `
-    <div class="tc" onclick="window.location='/pages/task.html?id=${t._id}'">
+    <div class="tc" onclick="window.location='/task?id=${t._id}'">
       ${coverHtml}
       <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:4px">
         <div class="tc-prio" style="background:${PRIO_COLOR[t.prioritas]||'#ccc'};margin-top:4px"></div>

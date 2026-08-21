@@ -84,11 +84,11 @@ async function onTaskComplete(task) {
     const u = await User.findById(uid);
     if (!u) continue;
     await notifSvc.notifTaskDone(u, task).catch(() => {});
-    push.sendPush(u._id, { title: 'Task Selesai!', body: task.judul, url: `/pages/task.html?id=${task._id}` }).catch(() => {});
+    push.sendPush(u._id, { title: 'Task Selesai!', body: task.judul, url: `/task?id=${task._id}` }).catch(() => {});
     await simpanSnapshot(u._id, now.getMonth() + 1, now.getFullYear()).catch(() => {});
   }
   if (!assigneeIds(task).includes(idStr(task.dibuatOleh))) {
-    push.sendPush(task.dibuatOleh, { title: 'Task Selesai!', body: task.judul, url: `/pages/task.html?id=${task._id}` }).catch(() => {});
+    push.sendPush(task.dibuatOleh, { title: 'Task Selesai!', body: task.judul, url: `/task?id=${task._id}` }).catch(() => {});
   }
 }
 
@@ -432,7 +432,7 @@ router.post('/:id/complete-mine', auth, async (req, res) => {
       }).catch(() => {});
       push.sendPush(vid, {
         title: 'Menunggu Approval Anda', body: `Task siap divalidasi: ${task.judul}`,
-        url: `/pages/approval.html`,
+        url: `/approval`,
       }).catch(() => {});
     }
   }
@@ -461,7 +461,7 @@ router.post('/:id/approve', auth, async (req, res) => {
     await StatusLog.create({ taskId: task._id, userId: req.user._id, statusLama, statusBaru: 'on_progress', catatan: 'Ditolak validator — revisi' });
     // beri tahu assignee
     for (const uid of assigneeIds(task)) {
-      push.sendPush(uid, { title: 'Perlu Revisi', body: task.judul, url: `/pages/task.html?id=${task._id}` }).catch(() => {});
+      push.sendPush(uid, { title: 'Perlu Revisi', body: task.judul, url: `/task?id=${task._id}` }).catch(() => {});
     }
     return res.json({ message: 'Task dikembalikan untuk revisi', task });
   }

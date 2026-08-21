@@ -109,12 +109,12 @@
       <div class="bc"><span class="cur">Task List</span></div>
       <div class="topbar-right">
         <div class="view-sw">
-          <a href="/pages/list.html"><i class="ti ti-list"></i> List</a>
-          <a href="/pages/board.html"><i class="ti ti-layout-kanban"></i> Board</a>
-          <a href="/pages/gantt.html" class="active"><i class="ti ti-chart-gantt"></i> Gantt</a>
-          <a href="/pages/calendar.html"><i class="ti ti-calendar-month"></i> Kalender</a>
+          <a href="/list"><i class="ti ti-list"></i> List</a>
+          <a href="/board"><i class="ti ti-layout-kanban"></i> Board</a>
+          <a href="/gantt" class="active"><i class="ti ti-chart-gantt"></i> Gantt</a>
+          <a href="/calendar"><i class="ti ti-calendar-month"></i> Kalender</a>
         </div>
-        <a href="/pages/task-form.html" class="btn btn-primary"><i class="ti ti-plus"></i> Buat Task</a>
+        <a href="/task-form" class="btn btn-primary"><i class="ti ti-plus"></i> Buat Task</a>
       </div>
     </div>
 
@@ -301,7 +301,7 @@ function renderGantt() {
         style="left:${barLeft}px;width:${barWidth}px;background:${isOverdue?'#EF4444':color.bar};color:${color.text};${isOverdue?'background:repeating-linear-gradient(45deg,#EF4444,#EF4444 4px,#DC2626 4px,#DC2626 8px)':''}"
         onmouseenter="showTooltip(event,'${t.judul.replace(/'/g,"\\'")}','${assigneeNames(t).replace(/'/g,"\\'")}','${statusLabel(t.status)}','${formatTanggal(t.deadline)}')"
         onmouseleave="hideTooltip()"
-        onclick="window.location='/pages/task.html?id=${t._id}'">
+        onclick="window.location='/task?id=${t._id}'">
         <span class="gantt-bar-label">${t.judul}</span>
       </div>
     </div>`;
@@ -310,7 +310,7 @@ function renderGantt() {
   // List HTML
   let listRowsHtml = tasks.map(t => {
     const color = STATUS_COLORS[t.status] || STATUS_COLORS.to_do;
-    return `<div class="gantt-row" onclick="window.location='/pages/task.html?id=${t._id}'">
+    return `<div class="gantt-row" onclick="window.location='/task?id=${t._id}'">
       <div class="gantt-row-dot" style="background:${color.bar}"></div>
       <div class="gantt-row-name" title="${t.judul}">${t.judul}</div>
       <div class="gantt-row-pic">${firstAssignee(t)?.namaLengkap?.split(' ')[0]||'—'}</div>

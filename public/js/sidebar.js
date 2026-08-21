@@ -18,24 +18,24 @@ function buildSidebar(user, activePage) {
   const isTaskList  = taskListIds.includes(activePage);
 
   const pages = [
-    { id: 'dashboard',  href: '/pages/dashboard.html', icon: 'ti-layout-dashboard', label: 'Dashboard',  section: 'tasks' },
-    { id: 'my-tasks',   href: '/pages/my-tasks.html',  icon: 'ti-checkbox',         label: 'My Tasks',   section: 'tasks' },
-    { id: 'tasks',      href: '/pages/list.html',       icon: 'ti-clipboard-list',   label: 'Task List',  section: 'tasks', activeIds: taskListIds },
+    { id: 'dashboard',  href: '/dashboard', icon: 'ti-layout-dashboard', label: 'Dashboard',  section: 'tasks' },
+    { id: 'my-tasks',   href: '/my-tasks',  icon: 'ti-checkbox',         label: 'My Tasks',   section: 'tasks' },
+    { id: 'tasks',      href: '/list',       icon: 'ti-clipboard-list',   label: 'Task List',  section: 'tasks', activeIds: taskListIds },
     ...(isTopTier ? [
-      { id: 'approval', href: '/pages/approval.html', icon: 'ti-checks', label: 'Task Approval', section: 'tasks' },
+      { id: 'approval', href: '/approval', icon: 'ti-checks', label: 'Task Approval', section: 'tasks' },
     ] : []),
-    { id: 'inbox',      href: '/pages/inbox.html',      icon: 'ti-bell',             label: 'Notifikasi', section: 'tasks', badge: true },
-    { id: 'messages',   href: '/pages/messages.html',   icon: 'ti-message-circle',   label: 'Pesan',      section: 'workspace', badgeId: 'sb-dm-badge' },
-    { id: 'channel',    href: '/pages/channel.html',    icon: 'ti-messages',         label: 'Channel',    section: 'workspace' },
-    { id: 'kpi',        href: '/pages/stats.html',      icon: 'ti-chart-bar',        label: 'KPI',        section: 'workspace' },
-    { id: 'milestones', href: '/pages/milestones.html', icon: 'ti-flag',             label: 'Milestones', section: 'workspace' },
-    { id: 'workload',   href: '/pages/workload.html',   icon: 'ti-users-group',      label: 'Workload',   section: 'workspace' },
+    { id: 'inbox',      href: '/inbox',      icon: 'ti-bell',             label: 'Notifikasi', section: 'tasks', badge: true },
+    { id: 'messages',   href: '/messages',   icon: 'ti-message-circle',   label: 'Pesan',      section: 'workspace', badgeId: 'sb-dm-badge' },
+    { id: 'channel',    href: '/channel',    icon: 'ti-messages',         label: 'Channel',    section: 'workspace' },
+    { id: 'kpi',        href: '/stats',      icon: 'ti-chart-bar',        label: 'KPI',        section: 'workspace' },
+    { id: 'milestones', href: '/milestones', icon: 'ti-flag',             label: 'Milestones', section: 'workspace' },
+    { id: 'workload',   href: '/workload',   icon: 'ti-users-group',      label: 'Workload',   section: 'workspace' },
     ...(isTopTier ? [
-      { id: 'users',  href: '/pages/settings.html', icon: 'ti-users',        label: 'Manajemen User', section: 'admin' },
-      { id: 'audit',  href: '/pages/audit.html',    icon: 'ti-shield-check', label: 'Audit Trail',    section: 'admin' },
-      { id: 'admin-tasks',   href: '/pages/admin-tasks.html',   icon: 'ti-subtask',  label: 'Manajemen Task', section: 'admin' },
-      { id: 'site-settings', href: '/pages/site-settings.html', icon: 'ti-settings', label: 'Site Settings', section: 'admin' },
-      { id: 'disaster',      href: '/pages/disaster.html',      icon: 'ti-alert-triangle', label: 'Disaster Settings', section: 'admin' },
+      { id: 'users',  href: '/settings', icon: 'ti-users',        label: 'Manajemen User', section: 'admin' },
+      { id: 'audit',  href: '/audit',    icon: 'ti-shield-check', label: 'Audit Trail',    section: 'admin' },
+      { id: 'admin-tasks',   href: '/admin-tasks',   icon: 'ti-subtask',  label: 'Manajemen Task', section: 'admin' },
+      { id: 'site-settings', href: '/site-settings', icon: 'ti-settings', label: 'Site Settings', section: 'admin' },
+      { id: 'disaster',      href: '/disaster',      icon: 'ti-alert-triangle', label: 'Disaster Settings', section: 'admin' },
     ] : []),
   ];
 
@@ -82,7 +82,7 @@ function buildSidebar(user, activePage) {
       ${navLinks}
     </div>
     <div class="sb-user" style="display:flex;align-items:center;gap:8px">
-      <div onclick="window.location='/pages/profile.html'" style="cursor:pointer;display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+      <div onclick="window.location='/profile'" style="cursor:pointer;display:flex;align-items:center;gap:10px;flex:1;min-width:0">
         ${fotoHtml}
         <div style="min-width:0">
           <div class="sb-uname">${user.namaLengkap}</div>
@@ -139,7 +139,7 @@ async function sidebarLogout() {
     ? await showConfirm('Keluar dari akun?', { title: 'Keluar', okLabel: 'Keluar', cancelLabel: 'Batal', type: 'warning' })
     : window.confirm('Keluar dari akun?');
   if (!ok) return;
-  try { await Auth.logout(); } catch { window.location.href = '/pages/login.html'; }
+  try { await Auth.logout(); } catch { window.location.href = '/login'; }
 }
 
 // Mobile overlay sidebar
@@ -198,7 +198,7 @@ async function initSidebar(activePage) {
   let user = getUser();
   if (!user) {
     try { const r = await Auth.me(); user = r?.user || r; localStorage.setItem('wt_user', JSON.stringify(user)); }
-    catch { window.location.href = '/pages/login.html'; return; }
+    catch { window.location.href = '/login'; return; }
   }
 
   el.innerHTML = buildSidebar(user, activePage);

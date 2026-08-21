@@ -198,10 +198,10 @@
     <div class="topbar">
       <div class="bc"><span class="cur">Dashboard</span></div>
       <div class="topbar-right">
-        <button class="btn-icon" title="Notifikasi" onclick="window.location='/pages/inbox.html'">
+        <button class="btn-icon" title="Notifikasi" onclick="window.location='/inbox'">
           <i class="ti ti-bell"></i>
         </button>
-        <a href="/pages/task-form.html" class="btn btn-primary">
+        <a href="/task-form" class="btn btn-primary">
           <i class="ti ti-plus"></i> <span>Buat Task</span>
         </a>
       </div>
@@ -213,7 +213,7 @@
         <div class="overdue-banner" id="overdue-banner" style="display:none">
           <i class="ti ti-alert-triangle" style="font-size:20px;flex-shrink:0"></i>
           <span id="overdue-text"></span>
-          <a href="/pages/list.html" class="btn btn-danger" style="margin-left:auto">Lihat</a>
+          <a href="/list" class="btn btn-danger" style="margin-left:auto">Lihat</a>
         </div>
 
         <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
@@ -222,7 +222,7 @@
             <div class="dash-sub" id="dash-sub">Memuat data...</div>
           </div>
           <div style="display:flex;gap:8px">
-            <a href="/pages/board.html" class="btn"><i class="ti ti-layout-kanban"></i> Buka Board</a>
+            <a href="/board" class="btn"><i class="ti ti-layout-kanban"></i> Buka Board</a>
           </div>
         </div>
 
@@ -345,7 +345,7 @@ function buildMyTasks() {
   const title = isAdmin ? 'Task Terbaru' : 'Task Saya';
   const inner = myTasks.length
     ? myTasks.map(t => `
-        <a href="/pages/task.html?id=${t._id}" class="task-row">
+        <a href="/task?id=${t._id}" class="task-row">
           <div class="prio-dot p-${t.prioritas}"></div>
           <span style="flex:1;font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.judul}</span>
           <span class="badge ${statusBadgeClass(t.status)}">${statusLabel(t.status)}</span>
@@ -357,7 +357,7 @@ function buildMyTasks() {
     <div class="section-card widget-block" data-widget="my-tasks">
       <div class="section-head">
         <span class="section-title">${title}</span>
-        <a href="/pages/list.html" class="btn btn-ghost" style="font-size:12px">Lihat semua <i class="ti ti-arrow-right"></i></a>
+        <a href="/list" class="btn btn-ghost" style="font-size:12px">Lihat semua <i class="ti ti-arrow-right"></i></a>
       </div>
       ${inner}
     </div>`;
@@ -435,7 +435,7 @@ function buildUpcoming() {
         const dayBg = d < 0 ? '#FEE2E2' : d === 0 ? '#FEF3C7' : d <= 2 ? '#FEF3C7' : '#EFF6FF';
         const dayFg = d < 0 ? '#991B1B' : d === 0 ? '#92400E' : d <= 2 ? '#92400E' : '#1E40AF';
         const dayTxt = d < 0 ? `${Math.abs(d)}h lalu` : d === 0 ? 'Hari ini' : `${d}h lagi`;
-        return `<a href="/pages/task.html?id=${t._id}" class="upcoming-item">
+        return `<a href="/task?id=${t._id}" class="upcoming-item">
           <span class="prio-dot p-${t.prioritas}"></span>
           <span style="flex:1;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.judul}</span>
           <span class="upcoming-days" style="background:${dayBg};color:${dayFg}">${dayTxt}</span>
@@ -462,7 +462,7 @@ function buildMilestones() {
         const d = Math.ceil((new Date(m.tanggal) - now) / 86400000);
         const dTxt = d < 0 ? `${Math.abs(d)}h lalu` : d === 0 ? 'Hari ini' : `${d}h lagi`;
         const dClr = d < 0 ? 'var(--red)' : d <= 3 ? 'var(--orange)' : 'var(--text-3)';
-        return `<a href="/pages/milestones.html" class="ms-item">
+        return `<a href="/milestones" class="ms-item">
           <div class="ms-dot" style="background:${m.warna||'#6366F1'}"></div>
           <span style="flex:1;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.judul}</span>
           <span style="font-size:11px;color:${dClr};flex-shrink:0">${dTxt}</span>
@@ -474,7 +474,7 @@ function buildMilestones() {
     <div class="section-card widget-block" data-widget="milestones">
       <div class="section-head">
         <span class="section-title">Milestones</span>
-        <a href="/pages/milestones.html" class="btn btn-ghost" style="font-size:12px">Lihat semua <i class="ti ti-arrow-right"></i></a>
+        <a href="/milestones" class="btn btn-ghost" style="font-size:12px">Lihat semua <i class="ti ti-arrow-right"></i></a>
       </div>
       ${inner}
     </div>`;
@@ -485,7 +485,7 @@ function buildKpi() {
     return `
       <div class="section-card widget-block" data-widget="kpi">
         <div class="section-head"><span class="section-title">KPI Saya</span>
-          <a href="/pages/stats.html" class="btn btn-ghost" style="font-size:12px">Detail <i class="ti ti-arrow-right"></i></a>
+          <a href="/stats" class="btn btn-ghost" style="font-size:12px">Detail <i class="ti ti-arrow-right"></i></a>
         </div>
         <div class="empty"><i class="ti ti-target"></i><p>Tidak ada data KPI</p></div>
       </div>`;
@@ -511,7 +511,7 @@ function buildKpi() {
     <div class="section-card widget-block" data-widget="kpi">
       <div class="section-head">
         <span class="section-title">KPI Saya</span>
-        <a href="/pages/stats.html" class="btn btn-ghost" style="font-size:12px">Detail <i class="ti ti-arrow-right"></i></a>
+        <a href="/stats" class="btn btn-ghost" style="font-size:12px">Detail <i class="ti ti-arrow-right"></i></a>
       </div>
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px">
         <div style="text-align:center;flex-shrink:0">
@@ -532,7 +532,7 @@ function buildActivity() {
     <div class="section-card widget-block" data-widget="activity">
       <div class="section-head">
         <span class="section-title">Aktivitas Terbaru</span>
-        <a href="/pages/inbox.html" class="btn btn-ghost" style="font-size:12px">Lihat notifikasi</a>
+        <a href="/inbox" class="btn btn-ghost" style="font-size:12px">Lihat notifikasi</a>
       </div>
       <div id="activity-feed"><div class="empty"><i class="ti ti-activity"></i><p>Memuat...</p></div></div>
     </div>`;
@@ -684,7 +684,7 @@ async function renderActivityFeed() {
     const inits = initials(firstAssignee(t)?.namaLengkap || '?');
     const tgl   = new Date(t.updatedAt || t.createdAt).toLocaleDateString('id-ID', { day:'numeric', month:'short' });
     return `
-      <div class="act-item" onclick="window.location='/pages/task.html?id=${t._id}'" style="cursor:pointer">
+      <div class="act-item" onclick="window.location='/task?id=${t._id}'" style="cursor:pointer">
         <div class="act-av">${inits}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:12px;font-weight:600">${t.judul}</div>

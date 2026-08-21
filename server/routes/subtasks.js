@@ -102,7 +102,7 @@ router.post('/:id/submit', auth, async (req, res) => {
     }).catch(() => {});
     push.sendPush(vid, {
       title: 'Subtask menunggu approval', body: sub.judul,
-      url: `/pages/approval.html`,
+      url: `/approval`,
     }).catch(() => {});
   }
   await sub.populate('assignees', 'namaLengkap fotoProfil');
@@ -175,7 +175,7 @@ router.post('/:id/approve', auth, async (req, res) => {
         isi: `Subtask "${origJudul}" ditolak. Lanjutkan revisi di "Review Task (${origJudul})".`,
         taskId: sub.taskId,
       }).catch(() => {});
-      push.sendPush(uid, { title: 'Kerjaan ditolak, harap direvisi', body: origJudul, url: `/pages/task.html?id=${sub.taskId}` }).catch(() => {});
+      push.sendPush(uid, { title: 'Kerjaan ditolak, harap direvisi', body: origJudul, url: `/task?id=${sub.taskId}` }).catch(() => {});
     }
   } else {
     sub.status = 'done';
@@ -184,7 +184,7 @@ router.post('/:id/approve', auth, async (req, res) => {
     sub.approvedBy = req.user._id;
     await sub.save();
     for (const uid of (sub.assignees || []).map(idStr)) {
-      push.sendPush(uid, { title: 'Subtask disetujui (Done)', body: sub.judul, url: `/pages/task.html?id=${sub.taskId}` }).catch(() => {});
+      push.sendPush(uid, { title: 'Subtask disetujui (Done)', body: sub.judul, url: `/task?id=${sub.taskId}` }).catch(() => {});
     }
   }
   await sub.populate('assignees', 'namaLengkap fotoProfil');

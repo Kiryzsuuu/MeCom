@@ -102,12 +102,12 @@
       <div class="bc"><span class="cur">Kalender Task</span></div>
       <div class="topbar-right">
         <div class="view-sw">
-          <a href="/pages/list.html"><i class="ti ti-list"></i> List</a>
-          <a href="/pages/board.html"><i class="ti ti-layout-kanban"></i> Board</a>
-          <a href="/pages/gantt.html"><i class="ti ti-chart-gantt"></i> Gantt</a>
-          <a href="/pages/calendar.html" class="active"><i class="ti ti-calendar-month"></i> Kalender</a>
+          <a href="/list"><i class="ti ti-list"></i> List</a>
+          <a href="/board"><i class="ti ti-layout-kanban"></i> Board</a>
+          <a href="/gantt"><i class="ti ti-chart-gantt"></i> Gantt</a>
+          <a href="/calendar" class="active"><i class="ti ti-calendar-month"></i> Kalender</a>
         </div>
-        <a href="/pages/task-form.html" class="btn btn-primary"><i class="ti ti-plus"></i> Buat Task</a>
+        <a href="/task-form" class="btn btn-primary"><i class="ti ti-plus"></i> Buat Task</a>
       </div>
     </div>
 
@@ -285,7 +285,7 @@ function openDay(d) {
   panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
 
-function openTask(id) { window.location.href = '/pages/task.html?id=' + id; }
+function openTask(id) { window.location.href = '/task?id=' + id; }
 
 loadTasks();
 </script>

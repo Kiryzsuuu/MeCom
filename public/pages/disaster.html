@@ -76,7 +76,7 @@
 <script>
 if (!requireAuth()) throw 'redirect';
 const user = getUser();
-if (!['super_admin','direktur_coe','wakil_direktur_coe','sekretaris_coe'].includes(user?.role)) window.location.href = '/pages/dashboard.html';
+if (!['super_admin','direktur_coe','wakil_direktur_coe','sekretaris_coe'].includes(user?.role)) window.location.href = '/dashboard';
 
 const PHRASE = 'Saya yang bertanggung jawab dalam menghapus data ini';
 let verifiedEnik = null, verifiedPass = null;

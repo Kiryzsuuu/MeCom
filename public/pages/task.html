@@ -128,9 +128,9 @@
   <div class="main">
     <div class="topbar">
       <div class="bc">
-        <a href="/pages/dashboard.html">Dashboard</a>
+        <a href="/dashboard">Dashboard</a>
         <span class="bc-sep">/</span>
-        <a href="/pages/list.html">Task</a>
+        <a href="/list">Task</a>
         <span class="bc-sep">/</span>
         <span class="cur" id="bc-title">Detail</span>
       </div>
@@ -300,7 +300,7 @@
 if (!requireAuth()) throw 'redirect';
 const user      = getUser();
 const taskId    = new URLSearchParams(window.location.search).get('id');
-if (!taskId) window.location.href = '/pages/list.html';
+if (!taskId) window.location.href = '/list';
 
 let taskData = null;
 
@@ -761,7 +761,7 @@ async function sendKomentar() {
 }
 
 function editTask() {
-  window.location.href = `/pages/task-form.html?id=${taskId}`;
+  window.location.href = `/task-form?id=${taskId}`;
 }
 
 async function deleteTask() {
@@ -769,7 +769,7 @@ async function deleteTask() {
   try {
     await Tasks.delete(taskId);
     showToast('Task dihapus');
-    setTimeout(() => window.location.href = '/pages/list.html', 1000);
+    setTimeout(() => window.location.href = '/list', 1000);
   } catch (e) { showToast(e.message, 'error'); }
 }
 

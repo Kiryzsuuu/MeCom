@@ -62,7 +62,7 @@
 <script>
 if (!requireAuth()) throw 'redirect';
 const user = getUser();
-if (!['super_admin','direktur_coe','wakil_direktur_coe','sekretaris_coe'].includes(user.role)) { window.location.href='/pages/dashboard.html'; throw 'no access'; }
+if (!['super_admin','direktur_coe','wakil_direktur_coe','sekretaris_coe'].includes(user.role)) { window.location.href='/dashboard'; throw 'no access'; }
 
 let allTasks = [];
 let subCache = {};   // taskId -> array subtask
@@ -107,7 +107,7 @@ function render() {
             <span class="chip"><i class="ti ti-list-check" style="font-size:11px"></i> ${subInfo}</span>
           </div>
         </div>
-        <a href="/pages/task.html?id=${t._id}" class="badge-sm" style="text-decoration:none;cursor:pointer" onclick="event.stopPropagation()" title="Buka task"><i class="ti ti-external-link"></i></a>
+        <a href="/task?id=${t._id}" class="badge-sm" style="text-decoration:none;cursor:pointer" onclick="event.stopPropagation()" title="Buka task"><i class="ti ti-external-link"></i></a>
         <button class="del-btn" onclick="event.stopPropagation();delTask('${t._id}','${escapeAttr(t.judul)}')"><i class="ti ti-trash"></i> Hapus Task</button>
       </div>
       <div class="tk-body${open?' open':''}" id="body-${t._id}">

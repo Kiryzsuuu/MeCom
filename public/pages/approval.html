@@ -52,7 +52,7 @@
 <script>
 if (!requireAuth()) throw 'redirect';
 const user = getUser();
-if (!['super_admin','sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user?.role)) window.location.href = '/pages/dashboard.html';
+if (!['super_admin','sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user?.role)) window.location.href = '/dashboard';
 
 async function load() {
   const el = document.getElementById('ap-list');
@@ -66,7 +66,7 @@ async function load() {
       <div class="ap-card">
         <div class="ap-head">
           <div style="flex:1;min-width:0">
-            <div class="ap-title"><a href="/pages/task.html?id=${s.taskId?._id || s.taskId}" style="color:inherit;text-decoration:none">${s.judul}</a></div>
+            <div class="ap-title"><a href="/task?id=${s.taskId?._id || s.taskId}" style="color:inherit;text-decoration:none">${s.judul}</a></div>
             <div class="ap-meta">
               <span style="color:var(--text-3)">di task: ${s.taskId?.judul || '-'}</span>
               <span><i class="ti ti-users" style="font-size:12px"></i> ${assignees}</span>
@@ -92,7 +92,7 @@ async function load() {
       <div class="ap-card">
         <div class="ap-head">
           <div style="flex:1;min-width:0">
-            <div class="ap-title"><a href="/pages/task.html?id=${t._id}" style="color:inherit;text-decoration:none">${t.judul}</a></div>
+            <div class="ap-title"><a href="/task?id=${t._id}" style="color:inherit;text-decoration:none">${t.judul}</a></div>
             <div class="ap-meta">
               <span><i class="ti ti-users" style="font-size:12px"></i> ${assignees}</span>
               <span><i class="ti ti-user-plus" style="font-size:12px"></i> ${t.dibuatOleh?.namaLengkap || '-'}</span>
