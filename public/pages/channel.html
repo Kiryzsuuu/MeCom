@@ -688,6 +688,9 @@
             <button class="vc-mini-btn" id="vc-record" onclick="toggleRecording()" title="Rekam">
               <i class="ti ti-player-record"></i>
             </button>
+            <button class="vc-mini-btn" onclick="openNotulen()" title="Notulen">
+              <i class="ti ti-notes"></i>
+            </button>
             <button class="vc-mini-btn" onclick="openVoiceSettings()" title="Pengaturan Audio/Video">
               <i class="ti ti-settings"></i>
             </button>
@@ -750,6 +753,7 @@
     <div class="call-bar-extras">
       <button class="cb-small" id="cb-deafen" onclick="toggleDeafen()"><i class="ti ti-headphones"></i> Deafen</button>
       <button class="cb-small" id="cb-caption" onclick="toggleCaptions()"><i class="ti ti-closed-captioning"></i> Subtitle</button>
+      <button class="cb-small" onclick="openNotulen()"><i class="ti ti-notes"></i> Notulen</button>
       <button class="cb-small" id="cb-chat" onclick="toggleCallChat()"><i class="ti ti-message"></i> Chat</button>
     </div>
     <div id="record-indicator" style="display:none;position:absolute;top:14px;left:14px;align-items:center;gap:6px;background:rgba(239,68,68,.92);color:#fff;padding:5px 12px;border-radius:100px;font-size:12px;font-weight:700;z-index:5">
@@ -919,6 +923,27 @@
     <div class="vsm-actions">
       <button class="btn btn-ghost" onclick="closeVoiceSettings()">Tutup</button>
       <button class="btn btn-primary" onclick="applyVoiceSettings()">Terapkan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Notulen -->
+<div class="voice-settings-modal" id="notulen-modal" onclick="if(event.target===this)closeNotulen()">
+  <div class="vsm-box" style="max-width:560px">
+    <div class="vsm-header">
+      <i class="ti ti-notes" style="font-size:20px;color:var(--accent)"></i>
+      <span class="vsm-title">Notulen</span>
+      <span id="notulen-date" style="font-size:12px;color:var(--text-3);margin-left:8px"></span>
+      <button class="vsm-close" onclick="closeNotulen()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="vsm-body" style="max-height:440px;overflow-y:auto">
+      <div id="notulen-list" style="display:flex;flex-direction:column;gap:10px;padding:4px 0">
+        <div style="color:var(--text-3);font-size:13px;text-align:center;padding:20px">Memuat...</div>
+      </div>
+    </div>
+    <div class="vsm-actions">
+      <button class="btn btn-ghost" onclick="closeNotulen()">Tutup</button>
+      <button class="btn btn-primary" onclick="downloadNotulen()"><i class="ti ti-download"></i> Unduh (.txt)</button>
     </div>
   </div>
 </div>
@@ -1984,6 +2009,7 @@ function leaveVoice() {
 
   if (isRecording) stopRecording();
   stopSpeechCapture();
+  closeNotulen();
   socket?.emit('voice:leave-captions', { channelId: VOICE_ROOM_ID });
 
   document.querySelectorAll('audio[id^="audio-"]').forEach(a => a.remove());
@@ -2347,10 +2373,16 @@ function startSpeechCapture() {
     speechRecognizer.lang = 'id-ID';
     speechRecognizer.onresult = (e) => {
       let text = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) text += e.results[i][0].transcript;
+      let isFinal = false;
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        text += e.results[i][0].transcript;
+        if (e.results[i].isFinal) isFinal = true;
+      }
       text = text.trim();
       if (text) {
-        getSocket().emit('voice:caption', { channelId: VOICE_ROOM_ID, text });
+        // isFinal: kalimat sudah "selesai" menurut recognizer — cuma ini yang disimpan
+        // ke notulen di server (interim tetap disiarkan buat subtitle real-time saja).
+        getSocket().emit('voice:caption', { channelId: VOICE_ROOM_ID, text, isFinal });
         showCaptionOnTile(me._id, me.namaLengkap, text);
       }
     };
@@ -2379,6 +2411,75 @@ function showCaptionOnTile(userId, name, text) {
   cap.textContent = captionEnabled ? text : '';
   clearTimeout(captionTimers[userId]);
   captionTimers[userId] = setTimeout(() => { cap.textContent = ''; }, 4000);
+}
+
+// ── Notulen (transkrip voice, diambil dari riwayat tersimpan di server) ────────
+let notulenEntries = [];
+let notulenRefreshTimer = null;
+let notulenDate = null; // null = hari ini
+
+async function openNotulen() {
+  document.getElementById('notulen-modal').classList.add('active');
+  await loadNotulen();
+  clearInterval(notulenRefreshTimer);
+  notulenRefreshTimer = setInterval(loadNotulen, 8000);
+}
+
+function closeNotulen() {
+  document.getElementById('notulen-modal')?.classList.remove('active');
+  clearInterval(notulenRefreshTimer);
+  notulenRefreshTimer = null;
+}
+
+async function loadNotulen() {
+  try {
+    const res = await Voice.transcript(VOICE_ROOM_ID, notulenDate);
+    notulenEntries = res.entries || [];
+    document.getElementById('notulen-date').textContent = new Date(res.date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    renderNotulen();
+  } catch (err) {
+    document.getElementById('notulen-list').innerHTML = `<div style="color:var(--red-text);font-size:13px;text-align:center;padding:20px">${err.message}</div>`;
+  }
+}
+
+function renderNotulen() {
+  const el = document.getElementById('notulen-list');
+  if (!notulenEntries.length) {
+    el.innerHTML = '<div style="color:var(--text-3);font-size:13px;text-align:center;padding:20px">Belum ada percakapan yang tercatat hari ini.<br>Aktifkan tombol Subtitle saat voice call supaya otomatis tercatat.</div>';
+    return;
+  }
+  let html = '';
+  let lastSpeaker = '';
+  notulenEntries.forEach((e) => {
+    const time = new Date(e.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const showName = e.name !== lastSpeaker;
+    lastSpeaker = e.name;
+    html += `
+      <div>
+        ${showName ? `<div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:2px">${escHtml(e.name)} <span style="font-weight:400;color:var(--text-3)">${time}</span></div>` : ''}
+        <div style="font-size:13px;color:var(--text-2);line-height:1.5">${escHtml(e.text)}</div>
+      </div>`;
+  });
+  el.innerHTML = html;
+}
+
+function downloadNotulen() {
+  if (!notulenEntries.length) { showToast('Belum ada isi notulen untuk diunduh', 'error'); return; }
+  const dateLabel = document.getElementById('notulen-date').textContent;
+  let content = `NOTULEN — General Voice\n${dateLabel}\nDiunduh: ${new Date().toLocaleString('id-ID')}\n${'='.repeat(50)}\n\n`;
+  let lastSpeaker = '';
+  notulenEntries.forEach((e) => {
+    const time = new Date(e.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    if (e.name !== lastSpeaker) { content += `\n[${time}] ${e.name}:\n`; lastSpeaker = e.name; }
+    content += `${e.text}\n`;
+  });
+
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `Notulen-General-Voice-${new Date().toISOString().slice(0,10)}.txt`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
 // ── Voice Settings State ───────────────────────────────────────────────────────

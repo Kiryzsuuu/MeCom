@@ -47,11 +47,22 @@ function initSocket(server) {
     socket.on('voice:leave-captions', ({ channelId }) => {
       if (channelId) socket.leave(`voice-cc:${channelId}`);
     });
-    socket.on('voice:caption', ({ channelId, text }) => {
+    socket.on('voice:caption', (data) => {
+      const channelId = data?.channelId;
+      const text = String(data?.text || '').trim().slice(0, 500);
       if (!channelId || !text) return;
+
       socket.to(`voice-cc:${channelId}`).emit('voice:caption', {
-        userId: socket.userId, name: socket.userName, text: String(text).slice(0, 500),
+        userId: socket.userId, name: socket.userName, text,
       });
+
+      // Cuma simpan ke notulen kalau recognizer sudah anggap kalimatnya final —
+      // hasil interim (masih berubah-ubah tiap kata baru) cuma buat subtitle live.
+      if (data?.isFinal) {
+        const VoiceTranscript = require('./models/VoiceTranscript');
+        VoiceTranscript.create({ room: channelId, userId: socket.userId, name: socket.userName, text })
+          .catch((err) => console.error('[VoiceTranscript] Gagal simpan:', err.message));
+      }
     });
 
     // ── Task chat room ────────────────────────────────────────────────────────

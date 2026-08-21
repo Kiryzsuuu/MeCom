@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { AccessToken, RoomServiceClient } = require('livekit-server-sdk');
 const auth = require('../middleware/auth');
 const Conversation = require('../models/Conversation');
+const VoiceTranscript = require('../models/VoiceTranscript');
 
 function getRoomService() {
   if (!process.env.LIVEKIT_URL || !process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET) return null;
@@ -55,6 +56,19 @@ router.get('/participants', auth, async (req, res) => {
   } catch {
     res.json([]); // room belum ada / belum ada yang join
   }
+});
+
+// GET /api/voice/transcript?room=general&date=YYYY-MM-DD — notulen (transkrip) voice
+router.get('/transcript', auth, async (req, res) => {
+  const room = (req.query.room || 'general').toString().slice(0, 100).replace(/[^a-zA-Z0-9_-]/g, '');
+  const dateStr = (req.query.date || '').toString();
+
+  const day = /^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? new Date(dateStr) : new Date();
+  const start = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), 0, 0, 0));
+  const end   = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), 23, 59, 59, 999));
+
+  const entries = await VoiceTranscript.find({ room, createdAt: { $gte: start, $lte: end } }).sort({ createdAt: 1 });
+  res.json({ room, date: start.toISOString().slice(0, 10), entries });
 });
 
 module.exports = router;

@@ -271,6 +271,10 @@ const DM = {
 const Voice = {
   async token(room = 'general')       { return apiFetch(`/voice/token?room=${encodeURIComponent(room)}`); },
   async participants(room = 'general') { return apiFetch(`/voice/participants?room=${encodeURIComponent(room)}`); },
+  async transcript(room = 'general', date = '') {
+    const qs = new URLSearchParams({ room, ...(date ? { date } : {}) }).toString();
+    return apiFetch(`/voice/transcript?${qs}`);
+  },
 };
 
 // ── Subtasks ──────────────────────────────────────────────────────────────────
