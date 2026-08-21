@@ -224,8 +224,8 @@
             <button class="dm-back-btn btn-icon" style="display:none" onclick="closeChatMobile()"><i class="ti ti-arrow-left"></i></button>
             <div class="dm-conv-av" id="ch-av"></div>
             <div style="flex:1;min-width:0">
-              <div class="dm-chat-head-name" id="ch-name">—</div>
-              <div class="dm-chat-head-role" id="ch-role">—</div>
+              <div class="dm-chat-head-name" id="ch-name"></div>
+              <div class="dm-chat-head-role" id="ch-role"></div>
             </div>
             <button class="btn-icon" title="Panggilan suara" onclick="startCall(false)"><i class="ti ti-phone"></i></button>
             <button class="btn-icon" title="Panggilan video" onclick="startCall(true)"><i class="ti ti-video"></i></button>
@@ -252,7 +252,7 @@
     <div class="call-status" id="call-top-status"></div>
   </div>
   <div class="call-av" id="call-av"></div>
-  <div class="call-name" id="call-name">—</div>
+  <div class="call-name" id="call-name"></div>
   <div class="call-status" id="call-status">Memanggil...</div>
   <div class="call-actions" id="call-actions-outgoing">
     <button class="call-btn end" title="Batalkan" onclick="hangupCall()"><i class="ti ti-phone-off"></i></button>
@@ -610,7 +610,7 @@ function showCallOverlay(mode) {
   av.innerHTML = callPeerPhoto ? `<img src="${callPeerPhoto}" alt="">` : escHtml(initsOf(callPeerName));
   av.classList.toggle('ringing', mode !== 'connected');
   av.style.display = mode === 'connected' && callWithVideo ? 'none' : 'flex';
-  document.getElementById('call-name').textContent = callPeerName || '—';
+  document.getElementById('call-name').textContent = callPeerName || '';
   document.getElementById('call-name').style.display = mode === 'connected' && callWithVideo ? 'none' : 'block';
 
   const statusEl = document.getElementById('call-status');

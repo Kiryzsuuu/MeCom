@@ -135,8 +135,8 @@
             </div>
             <input type="file" id="avatar-input" accept="image/jpg,image/jpeg,image/png,image/webp" style="display:none" onchange="uploadAvatar(event)">
             <div class="profile-meta">
-              <div class="profile-meta-name" id="profile-name">—</div>
-              <div class="profile-meta-role" id="profile-role">—</div>
+              <div class="profile-meta-name" id="profile-name"></div>
+              <div class="profile-meta-role" id="profile-role"></div>
               <div class="profile-meta-jabatan" id="profile-jabatan"></div>
             </div>
           </div>
@@ -268,11 +268,11 @@ function renderProfile(u) {
 
   document.getElementById('profile-name').textContent    = u.namaLengkap;
   const roleName  = ROLE_MAP[u.role] || u.role;
-  const dirSuffix = u.direktoratId?.kode ? ' — ' + u.direktoratId.kode : '';
+  const dirSuffix = u.direktoratId?.kode ? ' - ' + u.direktoratId.kode : '';
   document.getElementById('profile-role').textContent    = u.role === 'dosen' ? roleName + dirSuffix : roleName;
   document.getElementById('profile-jabatan').textContent = u.jabatan || '';
 
-  document.getElementById('f-enik').value  = u.enik  || '—';
+  document.getElementById('f-enik').value  = u.enik  || '';
   document.getElementById('f-nama').value  = u.namaLengkap;
   document.getElementById('f-email').value = u.email;
   document.getElementById('f-wa').value    = u.nomorWa || '';

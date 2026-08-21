@@ -88,8 +88,8 @@
         <div class="my-header">
           <div class="my-avatar" id="my-avatar"></div>
           <div style="flex:1">
-            <div style="font-size:18px;font-weight:800;letter-spacing:-.3px" id="my-name">—</div>
-            <div style="font-size:13px;color:var(--text-3);margin-top:2px" id="my-role">—</div>
+            <div style="font-size:18px;font-weight:800;letter-spacing:-.3px" id="my-name"></div>
+            <div style="font-size:13px;color:var(--text-3);margin-top:2px" id="my-role"></div>
           </div>
           <div class="my-stat"><div class="my-stat-n" id="stat-todo">0</div><div class="my-stat-l">To Do</div></div>
           <div class="my-stat"><div class="my-stat-n" id="stat-progress">0</div><div class="my-stat-l">In Progress</div></div>
@@ -218,7 +218,7 @@ function taskCard(t) {
   const now      = new Date();
   const deadline = t.deadline ? new Date(t.deadline) : null;
   const overdue  = deadline && deadline < now && t.status !== 'complete';
-  const dStr     = deadline ? deadline.toLocaleDateString('id-ID',{day:'numeric',month:'short'}) : '—';
+  const dStr     = deadline ? deadline.toLocaleDateString('id-ID',{day:'numeric',month:'short'}) : '';
 
   const subtaskTotal = t.subtaskTotal || 0;
   const subtaskDone  = t.subtaskDone  || 0;

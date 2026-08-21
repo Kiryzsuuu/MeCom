@@ -774,7 +774,7 @@
             <input type="range" class="vsm-slider" id="vsm-mic-vol" min="0" max="300" value="100" oninput="document.getElementById('vsm-mic-vol-val').textContent=this.value+'%'">
             <span class="vsm-slider-val" id="vsm-mic-vol-val">100%</span>
           </div>
-          <div style="font-size:11px;color:var(--text-3)">Volume Mikrofon — level saat bicara:</div>
+          <div style="font-size:11px;color:var(--text-3)">Volume Mikrofon - level saat bicara:</div>
           <div class="vsm-vol-bar"><div class="vsm-vol-fill" id="vsm-vol-fill"></div></div>
         </div>
 
@@ -1036,7 +1036,7 @@ async function openChannel(id) {
     </div>
     <div class="voice-panel" id="voice-panel">
       <div class="voice-header">
-        <span><i class="ti ti-volume" style="margin-right:4px"></i>Voice — aktif</span>
+        <span><i class="ti ti-volume" style="margin-right:4px"></i>Voice - aktif</span>
         <span id="voice-count" style="color:var(--text-3);font-size:11px;font-weight:400">0 peserta</span>
       </div>
       <div class="voice-participants" id="voice-participants"></div>
@@ -2596,7 +2596,7 @@ window.addEventListener('beforeunload', () => {
 // ── Mode popup: jendela khusus voice (hanya call-view + lobby) ─────────────────
 if (VOICE_POPUP) {
   document.body.classList.add('voice-popup-mode');
-  document.title = 'Voice — General Voice';
+  document.title = 'Voice - General Voice';
   getSocket();
   showLobby();
 }

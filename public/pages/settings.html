@@ -265,8 +265,8 @@
       <div class="imp-info-row">
         <div class="imp-avatar" id="imp-avatar-inits">??</div>
         <div>
-          <div class="imp-info-name" id="imp-target-name">—</div>
-          <div class="imp-info-role" id="imp-target-role">—</div>
+          <div class="imp-info-name" id="imp-target-name"></div>
+          <div class="imp-info-role" id="imp-target-role"></div>
         </div>
       </div>
       <div class="imp-notice">
@@ -424,7 +424,7 @@ async function reloadDirektorat() {
   const mDir = document.getElementById('m-direktorat');
   mDir.innerHTML = '<option value="">Pilih direktorat...</option>';
   dirs.forEach(d => {
-    const o = document.createElement('option'); o.value = d._id; o.textContent = `${d.kode} — ${d.nama}`;
+    const o = document.createElement('option'); o.value = d._id; o.textContent = `${d.kode} - ${d.nama}`;
     mDir.appendChild(o);
   });
 }

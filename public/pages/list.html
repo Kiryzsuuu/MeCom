@@ -240,7 +240,7 @@ function renderTable(tasks) {
           </div>`;
         })()}
       </td>
-      <td class="hide-mobile" style="color:var(--text-2)">${(t.subtaskTotal||0) ? `${t.subtaskDone||0}/${t.subtaskTotal}` : '—'}</td>
+      <td class="hide-mobile" style="color:var(--text-2)">${(t.subtaskTotal||0) ? `${t.subtaskDone||0}/${t.subtaskTotal}` : ''}</td>
       <td class="hide-mobile" style="color:var(--text-2)">${creatorNames(t)}</td>
       <td class="hide-mobile" style="color:var(--text-2)">${namesOf(t.validators)}</td>
       <td class="hide-mobile" style="color:var(--text-2)">${t.direktoratId?.nama || '-'}</td>
@@ -252,7 +252,7 @@ function renderTable(tasks) {
         </div>
       </td>
       <td style="color:${isOverdue(t)?'var(--red)':'var(--text-2)'}">${formatTanggal(t.deadline)}</td>
-      <td class="hide-mobile" style="color:var(--text-3)">${t.evidenceCount || '—'}</td>
+      <td class="hide-mobile" style="color:var(--text-3)">${t.evidenceCount || ''}</td>
     </tr>`;
   }).join('');
 }

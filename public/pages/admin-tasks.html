@@ -93,7 +93,7 @@ function render() {
 
   el.innerHTML = list.map(t => {
     const open = openTasks.has(t._id);
-    const creator = t.dibuatOleh?.namaLengkap || '—';
+    const creator = t.dibuatOleh?.namaLengkap || '';
     const subInfo = (t.subtaskTotal || 0) ? `${t.subtaskDone||0}/${t.subtaskTotal} subtask` : 'tanpa subtask';
     return `
     <div class="tk-card">

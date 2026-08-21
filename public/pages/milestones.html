@@ -169,7 +169,7 @@ async function init() {
   const sel = document.getElementById('ms-dir');
   allDirs.forEach(d => {
     const o = document.createElement('option');
-    o.value = d._id; o.textContent = d.kode + ' — ' + d.nama;
+    o.value = d._id; o.textContent = d.kode + ' - ' + d.nama;
     sel.appendChild(o);
   });
 
@@ -266,7 +266,7 @@ function renderTimeline(milestones) {
           </div>
         </div>
         <div class="ms-date"><i class="ti ti-calendar"></i> ${formatTanggal(ms.tanggal)}</div>
-        ${ms.direktoratId ? `<div class="ms-dir"><i class="ti ti-building"></i> ${ms.direktoratId.kode} — ${ms.direktoratId.nama}</div>` : ''}
+        ${ms.direktoratId ? `<div class="ms-dir"><i class="ti ti-building"></i> ${ms.direktoratId.kode} - ${ms.direktoratId.nama}</div>` : ''}
         ${progressHtml}
         ${taskChips ? `<div class="ms-tasks">${taskChips}</div>` : ''}
         ${canEdit ? `

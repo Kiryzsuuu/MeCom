@@ -150,9 +150,9 @@
               <div id="task-status-badge"></div>
               <div id="status-actions" class="status-actions"></div>
             </div>
-            <h1 class="task-title-big" id="task-title">—</h1>
+            <h1 class="task-title-big" id="task-title"></h1>
             <div id="revisi-note" class="revisi-note" style="display:none"></div>
-            <div class="task-desc" id="task-desc">—</div>
+            <div class="task-desc" id="task-desc"></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px" id="task-tags"></div>
           </div>
 
@@ -237,14 +237,14 @@
         <div class="task-side">
           <div class="section-card" id="card-meta">
             <div class="section-title" style="margin-bottom:12px">Detail Task</div>
-            <div class="meta-row" style="align-items:flex-start"><i class="ti ti-users" style="font-size:14px"></i> Assignee: <strong id="m-pic" style="flex:1">—</strong></div>
-            <div class="meta-row"><i class="ti ti-building" style="font-size:14px"></i> Direktorat: <strong id="m-dir">—</strong></div>
-            <div class="meta-row"><i class="ti ti-calendar" style="font-size:14px"></i> Deadline: <strong id="m-deadline">—</strong></div>
-            <div class="meta-row"><i class="ti ti-flag" style="font-size:14px"></i> Prioritas: <strong id="m-prio">—</strong></div>
-            <div class="meta-row"><i class="ti ti-user-plus" style="font-size:14px"></i> Dibuat oleh: <strong id="m-creator">—</strong></div>
-            <div class="meta-row"><i class="ti ti-clock" style="font-size:14px"></i> Dibuat: <strong id="m-created">—</strong></div>
+            <div class="meta-row" style="align-items:flex-start"><i class="ti ti-users" style="font-size:14px"></i> Assignee: <strong id="m-pic" style="flex:1"></strong></div>
+            <div class="meta-row"><i class="ti ti-building" style="font-size:14px"></i> Direktorat: <strong id="m-dir"></strong></div>
+            <div class="meta-row"><i class="ti ti-calendar" style="font-size:14px"></i> Deadline: <strong id="m-deadline"></strong></div>
+            <div class="meta-row"><i class="ti ti-flag" style="font-size:14px"></i> Prioritas: <strong id="m-prio"></strong></div>
+            <div class="meta-row"><i class="ti ti-user-plus" style="font-size:14px"></i> Dibuat oleh: <strong id="m-creator"></strong></div>
+            <div class="meta-row"><i class="ti ti-clock" style="font-size:14px"></i> Dibuat: <strong id="m-created"></strong></div>
             <div class="meta-row"><i class="ti ti-flag" style="font-size:14px"></i> Milestone:
-              <strong id="m-milestone" style="flex:1">—</strong>
+              <strong id="m-milestone" style="flex:1"></strong>
               <button id="m-milestone-btn" class="btn" style="font-size:11px;padding:2px 8px;display:none" onclick="openMilestoneModal()">Set</button>
             </div>
             <div id="m-validators-wrap" style="display:none">
@@ -329,12 +329,12 @@ function renderTask(t) {
 
   const assigneesArr = t.assignees || [];
   document.getElementById('m-pic').innerHTML       = assigneesArr.length
-    ? assigneesArr.map(a => a.namaLengkap || '—').join(', ') : '—';
-  document.getElementById('m-dir').textContent     = t.direktoratId?.nama || '—';
+    ? assigneesArr.map(a => a.namaLengkap || '').join(', ') : '';
+  document.getElementById('m-dir').textContent     = t.direktoratId?.nama || '';
   document.getElementById('m-deadline').textContent= `${formatTanggal(t.deadline)}${isOverdue(t)?' ⚠':''}`;
   document.getElementById('m-deadline').style.color= isOverdue(t) ? 'var(--red)' : '';
   document.getElementById('m-prio').textContent    = prioritasLabel(t.prioritas);
-  document.getElementById('m-creator').textContent = t.dibuatOleh?.namaLengkap || '—';
+  document.getElementById('m-creator').textContent = t.dibuatOleh?.namaLengkap || '';
   document.getElementById('m-created').textContent = formatTanggal(t.createdAt);
 
   const isSuper   = ['super_admin','direktur_coe'].includes(user?.role);
@@ -361,7 +361,7 @@ function renderTask(t) {
   // Milestone
   const msEl  = document.getElementById('m-milestone');
   const msBtn = document.getElementById('m-milestone-btn');
-  msEl.textContent = t.milestoneId?.judul || '—';
+  msEl.textContent = t.milestoneId?.judul || '';
   if (msBtn) msBtn.style.display = (isDireksi || isCreator) ? '' : 'none';
 
   // Chat section — tampilkan hanya untuk creator, assignee, direksi
@@ -386,7 +386,7 @@ function renderTask(t) {
   }
   if (t.pendingApproval) {
     const rn = document.getElementById('revisi-note');
-    rn.textContent = '⏳ Pekerjaan selesai — menunggu Task Approval (direktur).';
+    rn.textContent = '⏳ Pekerjaan selesai - menunggu Task Approval (direktur).';
     rn.style.display = 'block';
   }
 
@@ -538,7 +538,7 @@ function renderSubtasks(subtasks) {
         <span class="badge ${subBadgeClass(st)}" style="font-size:10px">${subStatusLabel(st)}</span>
         ${canDeleteSub ? `<button class="btn" style="font-size:11px;padding:3px 7px;border-color:transparent;color:var(--red-text)" title="Hapus subtask & turunannya" onclick="event.stopPropagation();deleteSubtaskInline('${s._id}','${(s.judul||'').replace(/'/g,"\\'").replace(/"/g,'')}')"><i class="ti ti-trash"></i></button>` : ''}
       </div>
-      ${rejected ? `<div style="font-size:11px;color:var(--red-text);margin:2px 0 0 21px"><i class="ti ti-alert-circle" style="font-size:11px"></i> Kerjaan ditolak, harap direvisi — lihat subtask "Review Task (...)"</div>` : ''}
+      ${rejected ? `<div style="font-size:11px;color:var(--red-text);margin:2px 0 0 21px"><i class="ti ti-alert-circle" style="font-size:11px"></i> Kerjaan ditolak, harap direvisi - lihat subtask "Review Task (...)"</div>` : ''}
       <div class="subtask-row2">
         <span class="sub-priority ${prio}">${prioLabel[prio]}</span>
         ${names.length ? `<span class="sub-meta"><i class="ti ti-user" style="font-size:11px"></i>${names.join(', ')}</span>` : ''}
@@ -555,7 +555,7 @@ function renderSubtasks(subtasks) {
 
 function subPanel(s, st, canWork, canApprove) {
   const rejected = st === 'rejected';
-  if (rejected) canWork = false; // log riwayat — read only
+  if (rejected) canWork = false; // log riwayat - read only
   const opts = SUB_STATUS.filter(o => o.key !== 'done' && o.key !== 'rejected') // Done hanya via approval
     .map(o => `<option value="${o.key}" ${o.key===st?'selected':''}>${o.label}</option>`).join('');
   return `
@@ -607,7 +607,7 @@ async function loadSubAttachments(id) {
     const list = await Evidence.list(taskId, id);
     box.innerHTML = list.length ? list.map(ev =>
       `<a href="${ev.urlFile}" target="_blank" class="st-chip" style="text-decoration:none"><i class="ti ti-paperclip" style="font-size:10px"></i> ${ev.namaFile}</a>`
-    ).join('') : '<span style="font-size:11px;color:var(--text-3)">—</span>';
+    ).join('') : '<span style="font-size:11px;color:var(--text-3)"></span>';
   } catch { box.innerHTML = ''; }
 }
 
@@ -635,14 +635,14 @@ async function approveSubtask(id, approve) {
   if (!ok) return;
   try {
     await Subtasks.approve(id, approve);
-    showToast(approve ? 'Subtask disetujui' : 'Ditolak — subtask revisi dibuat');
+    showToast(approve ? 'Subtask disetujui' : 'Ditolak - subtask revisi dibuat');
     await loadTask();
   } catch (e) { showToast(e.message, 'error'); }
 }
 
 function renderEvidence(evidences) {
   const el = document.getElementById('evidence-list');
-  if (!el) return; // section lampiran global dihapus — lampiran kini per-subtask
+  if (!el) return; // section lampiran global dihapus - lampiran kini per-subtask
   if (!evidences.length) { el.innerHTML = '<div style="color:var(--text-3);font-size:13px">Belum ada evidence</div>'; return; }
 
   const isDireksi = ['super_admin','sekretaris_coe','wakil_direktur_coe','direktur_coe'].includes(user?.role);
@@ -702,7 +702,7 @@ function renderLogs(logs) {
     <div class="log-item">
       <div class="log-dot"></div>
       <div style="flex:1">
-        <span style="color:var(--text-2)">${l.userId?.namaLengkap || '—'}</span>
+        <span style="color:var(--text-2)">${l.userId?.namaLengkap || ''}</span>
         ${l.statusLama ? `mengubah status dari <strong>${statusLabel(l.statusLama)}</strong> ke ` : 'membuat task dengan status '}
         <strong>${statusLabel(l.statusBaru)}</strong>
         ${l.catatan ? `<div style="color:var(--text-3);margin-top:2px;font-style:italic">"${l.catatan}"</div>` : ''}
@@ -1054,7 +1054,7 @@ async function openMilestoneModal() {
   const sel = await showPrompt('Pilih Milestone untuk task ini', {
     title: 'Set Milestone',
     inputHtml: `<select class="input" id="ms-sel" style="width:100%">
-      <option value="">— Tidak ada —</option>
+      <option value="">- Tidak ada -</option>
       ${opts}
     </select>`,
     okLabel: 'Simpan',

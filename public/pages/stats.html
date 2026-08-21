@@ -116,22 +116,22 @@
         <div class="kpi-grid">
           <div class="kpi-card">
             <div class="kpi-label">Total Skor KPI</div>
-            <div class="kpi-val" id="kpi-total">—</div>
+            <div class="kpi-val" id="kpi-total"></div>
             <div class="kpi-sub" id="kpi-grade-label">Memuat...</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">Ketepatan Waktu (40%)</div>
-            <div class="kpi-val" id="kpi-waktu">—</div>
+            <div class="kpi-val" id="kpi-waktu"></div>
             <div class="kpi-sub">Poin ketepatan deadline</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">Volume (35%)</div>
-            <div class="kpi-val" id="kpi-volume">—</div>
+            <div class="kpi-val" id="kpi-volume"></div>
             <div class="kpi-sub">Penyelesaian task</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">Kualitas (25%)</div>
-            <div class="kpi-val" id="kpi-kualitas">—</div>
+            <div class="kpi-val" id="kpi-kualitas"></div>
             <div class="kpi-sub">Minimisasi revisi</div>
           </div>
         </div>
@@ -209,18 +209,18 @@ async function loadKpi() {
 
 function renderKpi(kpi) {
   if (!kpi) {
-    ['kpi-total','kpi-waktu','kpi-volume','kpi-kualitas'].forEach(id => document.getElementById(id).textContent = '—');
+    ['kpi-total','kpi-waktu','kpi-volume','kpi-kualitas'].forEach(id => document.getElementById(id).textContent = '');
     document.getElementById('kpi-grade-label').textContent = 'Belum ada data';
     document.getElementById('kpi-bars').innerHTML = '<div style="color:var(--text-3);font-size:14px;text-align:center;padding:30px">Belum ada data KPI untuk periode ini</div>';
     document.getElementById('grade-badge-el').style.display = 'none';
     return;
   }
   const grade = hitungGrade(kpi.skorTotal);
-  document.getElementById('kpi-total').textContent    = kpi.skorTotal?.toFixed(1) ?? '—';
-  document.getElementById('kpi-waktu').textContent    = kpi.skorWaktu?.toFixed(1) ?? '—';
-  document.getElementById('kpi-volume').textContent   = kpi.skorVolume?.toFixed(1) ?? '—';
-  document.getElementById('kpi-kualitas').textContent = kpi.skorKualitas?.toFixed(1) ?? '—';
-  document.getElementById('kpi-grade-label').textContent = `Grade ${grade} — ${labelGrade(grade)}`;
+  document.getElementById('kpi-total').textContent    = kpi.skorTotal?.toFixed(1) ?? '';
+  document.getElementById('kpi-waktu').textContent    = kpi.skorWaktu?.toFixed(1) ?? '';
+  document.getElementById('kpi-volume').textContent   = kpi.skorVolume?.toFixed(1) ?? '';
+  document.getElementById('kpi-kualitas').textContent = kpi.skorKualitas?.toFixed(1) ?? '';
+  document.getElementById('kpi-grade-label').textContent = `Grade ${grade} - ${labelGrade(grade)}`;
   document.getElementById('grade-text').textContent   = `Grade ${grade}`;
   document.getElementById('target-text').textContent  = `Target: ${kpi.targetKpi ?? 80}`;
   const gradeEl = document.getElementById('grade-badge-el');
@@ -245,11 +245,11 @@ function renderKpi(kpi) {
 }
 
 function hitungGrade(s) {
-  if (!s && s !== 0) return '—';
+  if (!s && s !== 0) return '';
   return s >= 85 ? 'A' : s >= 70 ? 'B' : s >= 50 ? 'C' : 'D';
 }
 function labelGrade(g) {
-  return { A:'Sangat Baik', B:'Baik', C:'Cukup', D:'Perlu Perbaikan' }[g] || '—';
+  return { A:'Sangat Baik', B:'Baik', C:'Cukup', D:'Perlu Perbaikan' }[g] || '';
 }
 
 async function loadHistory(userId) {
@@ -263,7 +263,7 @@ async function loadHistory(userId) {
       const c = {A:'var(--green)',B:'var(--purple)',C:'var(--orange)',D:'var(--red)'}[g] || 'var(--text-3)';
       return `<div class="history-month">
         <div class="hm-month">${BLN[r.periodeBulan-1]} ${String(r.periodeTahun).slice(-2)}</div>
-        <div class="hm-score" style="color:${c}">${r.skorTotal?.toFixed(0)??'—'}</div>
+        <div class="hm-score" style="color:${c}">${r.skorTotal?.toFixed(0)??''}</div>
         <div style="font-size:11px;font-weight:700;color:${c}">${g}</div>
       </div>`;
     }).join('');
@@ -285,12 +285,12 @@ async function loadAllManagers() {
           const g = hitungGrade(m.skorTotal);
           return `<tr>
             <td style="font-weight:600">${m.namaLengkap}</td>
-            <td style="color:var(--text-3)">${m.direktorat||'—'}</td>
-            <td style="font-weight:700;font-size:16px">${m.skorTotal?.toFixed(1)??'—'}</td>
+            <td style="color:var(--text-3)">${m.direktorat||''}</td>
+            <td style="font-weight:700;font-size:16px">${m.skorTotal?.toFixed(1)??''}</td>
             <td><span class="grade-badge grade-${g}" style="width:32px;height:32px;font-size:15px">${g}</span></td>
-            <td class="hide-mobile">${m.totalDone??'—'}</td>
-            <td class="hide-mobile">${m.totalTepat??'—'}</td>
-            <td class="hide-mobile">${m.totalRevisi??'—'}</td>
+            <td class="hide-mobile">${m.totalDone??''}</td>
+            <td class="hide-mobile">${m.totalTepat??''}</td>
+            <td class="hide-mobile">${m.totalRevisi??''}</td>
           </tr>`;
         }).join('')}</tbody>
       </table>`;

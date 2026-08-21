@@ -175,7 +175,7 @@
               </div>
               <div style="flex:1;min-width:0">
                 <div class="gs-item-title">${highlight(t.judul, q)}${overdueTag}</div>
-                <div class="gs-item-sub">${assigneeNames(t)} · ${t.direktoratId?.kode || '—'} · ${formatTanggal(t.deadline)}</div>
+                <div class="gs-item-sub">${assigneeNames(t)} · ${t.direktoratId?.kode || ''} · ${formatTanggal(t.deadline)}</div>
               </div>
               <span class="gs-item-badge" style="background:${sc}20;color:${sc}">${statusLabel(t.status)}</span>
             </a>`;
@@ -196,7 +196,7 @@
               ${avHtml}
               <div style="flex:1;min-width:0">
                 <div class="gs-item-title">${highlight(u.namaLengkap, q)}</div>
-                <div class="gs-item-sub">${u.role} · ${u.direktoratId?.nama || '—'}</div>
+                <div class="gs-item-sub">${u.role} · ${u.direktoratId?.nama || ''}</div>
               </div>
             </a>`;
         });

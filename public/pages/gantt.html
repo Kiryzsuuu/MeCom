@@ -215,7 +215,7 @@ async function init() {
     const sel = document.getElementById('f-dir');
     dirs.forEach(d => {
       const o = document.createElement('option');
-      o.value = d._id; o.textContent = d.kode + ' — ' + d.nama;
+      o.value = d._id; o.textContent = d.kode + ' - ' + d.nama;
       sel.appendChild(o);
     });
 
@@ -313,7 +313,7 @@ function renderGantt() {
     return `<div class="gantt-row" onclick="window.location='/task?id=${t._id}'">
       <div class="gantt-row-dot" style="background:${color.bar}"></div>
       <div class="gantt-row-name" title="${t.judul}">${t.judul}</div>
-      <div class="gantt-row-pic">${firstAssignee(t)?.namaLengkap?.split(' ')[0]||'—'}</div>
+      <div class="gantt-row-pic">${firstAssignee(t)?.namaLengkap?.split(' ')[0]||''}</div>
     </div>`;
   }).join('');
 
@@ -343,7 +343,7 @@ function renderGantt() {
     return `
       <div class="gantt-milestone-vline" style="left:${x}px;border-color:${ms.warna}"></div>
       <div class="gantt-milestone" style="left:${x}px;background:${ms.warna};border-radius:3px"
-        title="${ms.judul} — ${formatTanggal(ms.tanggal)}"></div>`;
+        title="${ms.judul} - ${formatTanggal(ms.tanggal)}"></div>`;
   }).join('');
 
   inner.innerHTML = `

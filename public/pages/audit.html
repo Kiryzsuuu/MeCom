@@ -132,14 +132,14 @@ async function loadLogs() {
           <div style="display:flex;align-items:center;gap:8px">
             <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;flex-shrink:0">${inits}</div>
             <div>
-              <div style="font-weight:600;font-size:13px">${l.userId?.namaLengkap||'—'}</div>
+              <div style="font-weight:600;font-size:13px">${l.userId?.namaLengkap||''}</div>
               <div style="font-size:11px;color:var(--text-3)">${l.userId?.email||''}</div>
             </div>
           </div>
         </td>
         <td><span class="aksi-pill" style="background:${cfg.bg};color:${cfg.fg}">${cfg.label}</span></td>
         <td class="hide-mobile" style="color:var(--text-2);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${detail}</td>
-        <td class="hide-mobile" style="color:var(--text-3);font-size:12px">${l.ip||'—'}</td>
+        <td class="hide-mobile" style="color:var(--text-3);font-size:12px">${l.ip||''}</td>
       </tr>`;
     }).join('');
 

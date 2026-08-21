@@ -274,7 +274,7 @@ function openDay(d) {
         <div class="dp-dot" style="background:${over?'#EF4444':pc.dot}"></div>
         <div>
           <div class="dp-title">${t.judul}</div>
-          <div style="font-size:11px;color:var(--text-3);margin-top:2px">${assigneeNames(t)} · ${t.direktoratId?.kode||'—'}</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px">${assigneeNames(t)} · ${t.direktoratId?.kode||''}</div>
         </div>
         <span class="dp-badge" style="background:${sc.bg};color:${sc.text}">${statusLabel(t.status)}</span>
         ${over ? '<span style="color:#EF4444;font-size:12px;font-weight:700">Overdue</span>' : ''}
