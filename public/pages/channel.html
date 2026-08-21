@@ -835,6 +835,21 @@
             <span class="vsm-preview-placeholder"><i class="ti ti-video-off"></i></span>
           </div>
         </div>
+        <div class="vsm-section" style="display:flex;gap:10px">
+          <div style="flex:1">
+            <div class="vsm-label">Resolusi</div>
+            <select class="vsm-select" id="vsm-res" onchange="startCamPreview()">
+              <option value="">Otomatis</option>
+            </select>
+          </div>
+          <div style="flex:1">
+            <div class="vsm-label">Frame Rate</div>
+            <select class="vsm-select" id="vsm-fps" onchange="startCamPreview()">
+              <option value="">Otomatis</option>
+            </select>
+          </div>
+        </div>
+        <div class="hint" id="vsm-cam-caps-hint" style="font-size:11px;color:var(--text-3)"></div>
       </div>
 
       <!-- ── TAB BACKGROUND ── -->
@@ -1718,7 +1733,11 @@ function micCaptureOptions() {
   };
 }
 function camCaptureOptions() {
-  return vsm.camId ? { deviceId: vsm.camId } : undefined;
+  const opts = {};
+  if (vsm.camId) opts.deviceId = vsm.camId;
+  if (vsm.resW && vsm.resH) opts.resolution = { width: vsm.resW, height: vsm.resH, frameRate: vsm.fps || undefined };
+  if (vsm.fps) opts.frameRate = vsm.fps;
+  return Object.keys(opts).length ? opts : undefined;
 }
 
 // Update badge mic-off di tile (avatar-only ATAU video) tanpa perlu bikin ulang tile-nya
@@ -2101,7 +2120,16 @@ function addScreenTile(id, track) {
 
 // ── Voice Settings State ───────────────────────────────────────────────────────
 let vsm = { micId: null, spkId: null, camId: null, micVol: 100, spkVol: 100,
-            noise: true, echo: true, agc: true, bgMode: 'none', bgImageSrc: null };
+            noise: true, echo: true, agc: true, bgMode: 'none', bgImageSrc: null,
+            resW: null, resH: null, fps: null };
+const CAM_RES_PRESETS = [
+  { w: 3840, h: 2160, label: '4K (3840×2160)' },
+  { w: 1920, h: 1080, label: 'Full HD (1920×1080)' },
+  { w: 1280, h: 720,  label: 'HD (1280×720)' },
+  { w: 854,  h: 480,  label: 'SD (854×480)' },
+  { w: 640,  h: 360,  label: '360p (640×360)' },
+];
+const CAM_FPS_PRESETS = [60, 30, 24, 15];
 let vsmStream = null; let vsmAnalyser = null; let vsmAnimFrame = null;
 let vsmBgStream = null; let vsmBgProcessor = null;
 let bgImageEl = null; // <img> preloaded untuk mode 'upload', dipakai preview & live
@@ -2197,13 +2225,63 @@ async function startCamPreview() {
   const preview = document.getElementById('vsm-preview');
   if (!preview) return;
   if (!camId) { preview.innerHTML = '<span class="vsm-preview-placeholder"><i class="ti ti-video-off"></i></span>'; return; }
+
+  const resVal = document.getElementById('vsm-res')?.value;
+  const fpsVal = document.getElementById('vsm-fps')?.value;
+  const [resW, resH] = resVal ? resVal.split('x').map(Number) : [null, null];
+  vsm.resW = resW || null; vsm.resH = resH || null;
+  vsm.fps  = fpsVal ? parseInt(fpsVal) : null;
+
   try {
-    const s = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: camId } } });
+    const constraints = { deviceId: { exact: camId } };
+    if (vsm.resW && vsm.resH) { constraints.width = { ideal: vsm.resW }; constraints.height = { ideal: vsm.resH }; }
+    if (vsm.fps) constraints.frameRate = { ideal: vsm.fps };
+
+    const s = await navigator.mediaDevices.getUserMedia({ video: constraints });
     if (vsmStream) vsmStream.getVideoTracks().forEach(t => t.stop());
     vsmStream = s;
     preview.innerHTML = '<video autoplay muted playsinline style="transform:scaleX(-1);width:100%;height:100%;object-fit:cover"></video>';
     preview.querySelector('video').srcObject = s;
+
+    populateCamCapabilities(s.getVideoTracks()[0]);
   } catch(e) { preview.innerHTML = '<span class="vsm-preview-placeholder"><i class="ti ti-video-off"></i></span>'; }
+}
+
+// Isi dropdown Resolusi/Frame Rate berdasarkan kemampuan ASLI kamera yang dipilih
+// (bukan daftar tetap) — preset yang melebihi batas kamera disembunyikan.
+function populateCamCapabilities(track) {
+  const resSel = document.getElementById('vsm-res');
+  const fpsSel = document.getElementById('vsm-fps');
+  const hint   = document.getElementById('vsm-cam-caps-hint');
+  if (!resSel || !fpsSel) return;
+
+  let caps = null;
+  try { caps = track.getCapabilities ? track.getCapabilities() : null; } catch (e) {}
+
+  resSel.innerHTML = '<option value="">Otomatis</option>';
+  fpsSel.innerHTML = '<option value="">Otomatis</option>';
+
+  if (caps && caps.width && caps.height) {
+    const maxW = caps.width.max || 1920;
+    const maxH = caps.height.max || 1080;
+    CAM_RES_PRESETS.filter(p => p.w <= maxW && p.h <= maxH).forEach(p => {
+      const val = `${p.w}x${p.h}`;
+      const sel = (vsm.resW === p.w && vsm.resH === p.h) ? 'selected' : '';
+      resSel.insertAdjacentHTML('beforeend', `<option value="${val}" ${sel}>${p.label}</option>`);
+    });
+    if (hint) hint.textContent = `Kamera ini mendukung hingga ${maxW}×${maxH}` +
+      (caps.frameRate?.max ? `, ${Math.round(caps.frameRate.max)}fps` : '');
+  } else if (hint) {
+    hint.textContent = 'Info kemampuan kamera tidak tersedia di browser ini';
+  }
+
+  if (caps && caps.frameRate) {
+    const maxFps = caps.frameRate.max || 30;
+    CAM_FPS_PRESETS.filter(f => f <= maxFps).forEach(f => {
+      const sel = vsm.fps === f ? 'selected' : '';
+      fpsSel.insertAdjacentHTML('beforeend', `<option value="${f}" ${sel}>${f} fps</option>`);
+    });
+  }
 }
 
 async function startBgPreview() {
@@ -2359,6 +2437,13 @@ async function applyVoiceSettings() {
         await lkRoom.localParticipant.setMicrophoneEnabled(true, micCaptureOptions());
       }
     } catch(e) { showToast('Gagal menerapkan pengaturan mic: ' + e.message, 'error'); }
+
+    // Terapkan resolusi/fps kamera baru ke track yang sedang live
+    if (isVideoOn) {
+      try { await lkRoom.localParticipant.setCameraEnabled(true, camCaptureOptions()); }
+      catch (e) { showToast('Gagal menerapkan resolusi/fps kamera: ' + e.message, 'error'); }
+      bgRawTrack = null; // track kamera baru diambil, paksa applyBgToStream ambil ulang sbg sumber
+    }
 
     // Terapkan virtual background ke stream yang sedang live
     if (isVideoOn) {
