@@ -164,6 +164,7 @@ const Users = {
       body: JSON.stringify({ passwordBaru }),
     });
   },
+  async delete(id) { return apiFetch(`/users/${id}`, { method: 'DELETE' }); },
   async uploadAvatar(file) {
     const base64 = await fileToBase64(file);
     return apiFetch('/users/me/avatar', { method: 'POST', body: JSON.stringify({ base64 }) });

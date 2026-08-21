@@ -330,7 +330,7 @@ function renderTable(users) {
         </div>
       </td>
       <td class="hide-mobile" style="color:var(--text-2)">${roleLabel(u.role)}</td>
-      <td class="hide-mobile" style="color:var(--text-2)">${u.direktoratId?.kode||'—'}</td>
+      <td class="hide-mobile" style="color:var(--text-2)">${u.direktoratId?.kode||''}</td>
       <td>
         <span style="font-size:11px;padding:3px 10px;border-radius:100px;font-weight:600;background:${u.statusAktif?'var(--green-bg)':'var(--red-bg)'};color:${u.statusAktif?'var(--green-text)':'var(--red-text)'}">
           ${u.statusAktif?'Aktif':'Nonaktif'}
@@ -344,9 +344,22 @@ function renderTable(users) {
           </button>
           <button class="btn" style="font-size:12px" title="Reset Password" onclick="resetPassword('${u._id}','${u.namaLengkap}')"><i class="ti ti-key"></i></button>
           ${isSuperadmin && !TOP_TIER_ROLES.includes(u.role) ? `<button class="btn" style="font-size:12px;background:var(--accent-dim);color:var(--accent);border-color:transparent" title="Masuk sebagai pengguna ini" onclick="masukSebagai('${u._id}','${u.namaLengkap}','${u.role}')"><i class="ti ti-user-check"></i></button>` : ''}
+          ${isSuperadmin && u._id !== user._id ? `<button class="btn" style="font-size:12px;background:var(--red-bg);color:var(--red-text);border-color:transparent" title="Hapus Pengguna" onclick="deleteUser('${u._id}','${u.namaLengkap}')"><i class="ti ti-trash"></i></button>` : ''}
         </div>
       </td>
     </tr>`).join('');
+}
+
+async function deleteUser(id, nama) {
+  const ok = await showConfirm(`Hapus pengguna "${nama}"? Tindakan ini tidak bisa dibatalkan.`, { title: 'Hapus Pengguna', okLabel: 'Hapus', type: 'danger' });
+  if (!ok) return;
+  try {
+    await Users.delete(id);
+    showToast('Pengguna dihapus');
+    await loadUsers();
+  } catch (err) {
+    showToast(err.message || 'Gagal menghapus pengguna', 'error');
+  }
 }
 
 function filterTable() {
