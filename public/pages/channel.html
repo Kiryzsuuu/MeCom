@@ -1985,7 +1985,7 @@ async function enterVoice() {
     }
 
     getSocket().emit('voice:join-captions', { channelId: VOICE_ROOM_ID });
-    startSpeechCapture();
+    if (!isMuted) startSpeechCapture();
   } catch (err) {
     showToast('Gagal terhubung ke voice: ' + (err?.message || err), 'error');
     leaveVoice();
@@ -2068,6 +2068,10 @@ async function toggleMute() {
   setTileMicBadge(me._id, isMuted);
   renderVoiceParticipants();
   updateVoiceUI();
+  // Mic mati juga harus menghentikan speech-to-text lokal, supaya subtitle/notulen
+  // tidak tetap merekam ucapan saat sedang di-mute.
+  if (isMuted) stopSpeechCapture();
+  else startSpeechCapture();
 }
 
 function toggleDeafen() {
@@ -2079,6 +2083,7 @@ function toggleDeafen() {
     lkRoom?.localParticipant.setMicrophoneEnabled(false).catch(() => {});
     setTileMicBadge(me._id, true);
     renderVoiceParticipants();
+    stopSpeechCapture();
   }
   updateVoiceUI();
 }
@@ -2379,7 +2384,7 @@ function startSpeechCapture() {
         if (e.results[i].isFinal) isFinal = true;
       }
       text = text.trim();
-      if (text) {
+      if (text && !isMuted) {
         // isFinal: kalimat sudah "selesai" menurut recognizer — cuma ini yang disimpan
         // ke notulen di server (interim tetap disiarkan buat subtitle real-time saja).
         getSocket().emit('voice:caption', { channelId: VOICE_ROOM_ID, text, isFinal });
