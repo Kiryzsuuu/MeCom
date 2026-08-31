@@ -2,7 +2,7 @@ const router      = require('express').Router();
 const User        = require('../models/User');
 const KpiSnapshot = require('../models/KpiSnapshot');
 const auth        = require('../middleware/auth');
-const { requireRole, TOP_TIER_ROLES } = require('../middleware/roles');
+const { requireRole, TOP_TIER_ROLES, BASIC_ROLES } = require('../middleware/roles');
 const { hitungKpiManager, simpanSnapshot, hitungGrade, labelGrade } = require('../services/kpi');
 
 // GET /api/kpi/me — KPI diri sendiri (real-time)
@@ -33,7 +33,7 @@ router.get('/semua', auth, requireRole('sekretaris_coe'), async (req, res) => {
   const tahun      = parseInt(req.query.tahun)      || now.getFullYear();
   const direktoratId = req.query.direktoratId;
 
-  const filter = { role: 'dosen', statusAktif: true };
+  const filter = { role: { $in: BASIC_ROLES }, statusAktif: true };
   if (direktoratId) filter.direktoratId = direktoratId;
 
   const managers = await User.find(filter).populate('direktoratId', 'nama kode').select('-passwordHash');

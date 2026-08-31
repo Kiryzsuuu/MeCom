@@ -219,7 +219,7 @@ function renderCards() {
 
     const loadPct  = Math.min(100, Math.round((w.active / maxLoad) * 100));
     const barColor = w.active > 7 ? '#EF4444' : w.active > 3 ? '#F59E0B' : '#10B981';
-    const roleLabel= 'Dosen';
+    const roleLabel= u.role === 'member' ? 'Member' : 'Dosen';
     const dirLabel = u.direktoratId?.kode || u.direktoratId?.nama || '';
 
     const chips = Object.entries(STATUS_MAP).filter(([k]) => (w.breakdown[k] || 0) > 0).map(([k, v]) =>
