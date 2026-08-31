@@ -40,10 +40,18 @@ router.get('/semua', auth, requireRole('sekretaris_coe'), async (req, res) => {
 
   const result = await Promise.all(managers.map(async m => {
     const kpi = await hitungKpiManager(m._id, bulan, tahun);
-    return { user: m, bulan, tahun, ...kpi };
+    return {
+      user: m,
+      userId: m._id,
+      namaLengkap: m.namaLengkap,
+      direktorat: m.direktoratId?.nama || '',
+      role: m.role,
+      bulan, tahun,
+      ...kpi,
+    };
   }));
 
-  res.json(result);
+  res.json({ managers: result });
 });
 
 // GET /api/kpi/riwayat/:userId — Riwayat 12 bulan

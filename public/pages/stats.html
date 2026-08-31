@@ -162,7 +162,7 @@
 
         <!-- Tabel semua dosen (top-tier) -->
         <div class="section-card all-tbl" id="all-managers-card" style="display:none">
-          <div class="section-head"><span class="section-title">KPI Semua Dosen</span></div>
+          <div class="section-head"><span class="section-title">KPI Semua Anggota</span></div>
           <div style="overflow-x:auto" id="all-managers-table"></div>
         </div>
 
@@ -280,7 +280,7 @@ async function loadAllManagers() {
     if (!managers.length) { document.getElementById('all-managers-table').innerHTML = '<div style="padding:24px;color:var(--text-3)">Belum ada data</div>'; return; }
     document.getElementById('all-managers-table').innerHTML = `
       <table>
-        <thead><tr><th>Dosen</th><th>Direktorat</th><th>Skor</th><th>Grade</th><th class="hide-mobile">Done</th><th class="hide-mobile">Tepat Waktu</th><th class="hide-mobile">Revisi</th></tr></thead>
+        <thead><tr><th>Nama</th><th>Direktorat</th><th>Skor</th><th>Grade</th><th class="hide-mobile">Done</th><th class="hide-mobile">Tepat Waktu</th><th class="hide-mobile">Revisi</th></tr></thead>
         <tbody>${managers.map(m => {
           const g = hitungGrade(m.skorTotal);
           return `<tr>
