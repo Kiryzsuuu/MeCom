@@ -210,6 +210,7 @@
         <option value="wakil_direktur_coe">Wakil Direktur CoE</option>
         <option value="sekretaris_coe">Sekretaris CoE</option>
         <option value="dosen">Dosen</option>
+        <option value="member">Member</option>
       </select>
     </div>
     <div class="field" id="m-dir-field">
@@ -374,7 +375,7 @@ function toggleDirField() {
 }
 
 function roleLabel(role) {
-  const map = { super_admin:'Super Admin', direktur_coe:'Direktur CoE', wakil_direktur_coe:'Wakil Direktur CoE', sekretaris_coe:'Sekretaris CoE', dosen:'Dosen' };
+  const map = { super_admin:'Super Admin', direktur_coe:'Direktur CoE', wakil_direktur_coe:'Wakil Direktur CoE', sekretaris_coe:'Sekretaris CoE', dosen:'Dosen', member:'Member' };
   return map[role] || role;
 }
 
@@ -492,11 +493,11 @@ async function saveUser() {
 
   if (!nama || !email || !role) { showToast('Nama, email, dan peran wajib diisi', 'error'); return; }
   if (!editId && !pass)         { showToast('Password wajib diisi', 'error'); return; }
-  if (role === 'dosen' && !dirId) { showToast('Direktorat wajib dipilih untuk Dosen', 'error'); return; }
+  if ((role === 'dosen' || role === 'member') && !dirId) { showToast('Direktorat wajib dipilih untuk Dosen/Member', 'error'); return; }
 
   const payload = { namaLengkap: nama, email, role };
   if (!editId) payload.password = pass;
-  if (role === 'dosen') payload.direktoratId = dirId;
+  if (role === 'dosen' || role === 'member') payload.direktoratId = dirId;
   if (nomorWa) payload.nomorWa = nomorWa;
 
   try {
@@ -537,7 +538,7 @@ let impersonateTarget = null;
 
 function masukSebagai(userId, nama, role) {
   impersonateTarget = { userId, nama, role };
-  const roleMap = { sekretaris_coe:'Sekretaris CoE', dosen:'Dosen', wakil_direktur_coe:'Wakil Direktur CoE' };
+  const roleMap = { sekretaris_coe:'Sekretaris CoE', dosen:'Dosen', member:'Member', wakil_direktur_coe:'Wakil Direktur CoE' };
   const inits = nama.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('imp-avatar-inits').textContent = inits;
   document.getElementById('imp-target-name').textContent  = nama;

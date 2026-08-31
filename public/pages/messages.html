@@ -306,7 +306,7 @@ function avHtmlFor(user) {
   return escHtml(initsOf(user?.namaLengkap));
 }
 function roleLabel(role) {
-  const map = { super_admin:'Super Admin', direktur_coe:'Direktur CoE', wakil_direktur_coe:'Wakil Direktur CoE', sekretaris_coe:'Sekretaris CoE', dosen:'Dosen' };
+  const map = { super_admin:'Super Admin', direktur_coe:'Direktur CoE', wakil_direktur_coe:'Wakil Direktur CoE', sekretaris_coe:'Sekretaris CoE', dosen:'Dosen', member:'Member' };
   return map[role] || role || '';
 }
 function fmtTime(d) {

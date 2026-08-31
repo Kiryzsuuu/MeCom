@@ -212,6 +212,16 @@ router.post('/', auth, async (req, res) => {
   const users = await User.find({ _id: { $in: assignees } });
   if (!users.length) return res.status(400).json({ message: 'Assignee tidak ditemukan' });
 
+  // Direktorat task = direktorat creator (untuk pelaporan). Kalau creator tidak
+  // punya direktorat (mis. super_admin/direktur/wakil direktur yang lintas-direktorat),
+  // pakai direktorat assignee pertama yang punya direktorat.
+  const creatorDirektoratId = req.user.direktoratId?._id || req.user.direktoratId;
+  const fallbackAssignee = users.find(u => u.direktoratId);
+  const direktoratId = creatorDirektoratId || fallbackAssignee?.direktoratId?._id || fallbackAssignee?.direktoratId;
+
+  if (!direktoratId)
+    return res.status(400).json({ message: 'Tidak dapat menentukan direktorat untuk task ini — pastikan salah satu assignee memiliki direktorat' });
+
   const task = await Task.create({
     judul: judul.trim(),
     deskripsi,
@@ -219,8 +229,7 @@ router.post('/', auth, async (req, res) => {
     dibuatOleh: req.user._id,
     creators: (creators || []).filter(id => idStr(id) !== req.user._id.toString()),
     validators: validators || [],
-    // Direktorat task = direktorat creator (untuk pelaporan)
-    direktoratId: req.user.direktoratId?._id || req.user.direktoratId,
+    direktoratId,
     prioritas: prioritas || 'normal',
     status: 'to_do',
     deadline: new Date(deadline),

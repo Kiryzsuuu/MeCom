@@ -2,7 +2,7 @@ const router      = require('express').Router();
 const crypto      = require('crypto');
 const User        = require('../models/User');
 const auth        = require('../middleware/auth');
-const { requireRole, requireSuperadmin, TOP_TIER_ROLES } = require('../middleware/roles');
+const { requireRole, requireSuperadmin, TOP_TIER_ROLES, BASIC_ROLES } = require('../middleware/roles');
 const { uploadAvatar } = require('../middleware/upload');
 const { mailPasswordReset } = require('../services/mailer');
 const audit = require('../services/audit');
@@ -50,16 +50,16 @@ router.get('/mention', auth, async (req, res) => {
   res.json(users);
 });
 
-// GET /api/users/dosen-direktorat/:id — dosen dalam direktorat tertentu
+// GET /api/users/dosen-direktorat/:id — dosen/member dalam direktorat tertentu
 router.get('/dosen-direktorat/:id', auth, async (req, res) => {
-  // Dosen hanya bisa lihat direktorat sendiri
-  if (req.user.role === 'dosen') {
+  // Dosen/member hanya bisa lihat direktorat sendiri
+  if (BASIC_ROLES.includes(req.user.role)) {
     const userDirId = req.user.direktoratId?._id?.toString() || req.user.direktoratId?.toString();
     if (userDirId !== req.params.id) {
       return res.status(403).json({ message: 'Akses ditolak' });
     }
   }
-  const users = await User.find({ direktoratId: req.params.id, role: 'dosen', statusAktif: true })
+  const users = await User.find({ direktoratId: req.params.id, role: { $in: BASIC_ROLES }, statusAktif: true })
     .select('-passwordHash')
     .sort({ namaLengkap: 1 });
   res.json(users);
@@ -77,8 +77,8 @@ router.post('/', auth, requireRole('sekretaris_coe'), async (req, res) => {
   if (TOP_TIER_ROLES.includes(role) && !TOP_TIER_ROLES.includes(req.user.role))
     return res.status(403).json({ message: 'Hanya Direktur CoE/Wakil Direktur CoE/Sekretaris CoE yang bisa membuat akun level tersebut' });
 
-  if (role === 'dosen' && !direktoratId)
-    return res.status(400).json({ message: 'Dosen wajib memiliki direktorat' });
+  if (BASIC_ROLES.includes(role) && !direktoratId)
+    return res.status(400).json({ message: 'Dosen/Member wajib memiliki direktorat' });
 
   const existing = await User.findOne({ email: email.toLowerCase() });
   if (existing) return res.status(400).json({ message: 'Email sudah terdaftar' });

@@ -859,7 +859,7 @@ function showMentionPopup(ta) {
   mentionIdx   = -1;
   mentionActive = true;
 
-  const ROLE_MAP = { super_admin:'Super Admin', direktur_coe:'Direktur CoE', wakil_direktur_coe:'Wakil Direktur CoE', sekretaris_coe:'Sekretaris CoE', dosen:'Dosen' };
+  const ROLE_MAP = { super_admin:'Super Admin', direktur_coe:'Direktur CoE', wakil_direktur_coe:'Wakil Direktur CoE', sekretaris_coe:'Sekretaris CoE', dosen:'Dosen', member:'Member' };
   popup.innerHTML = mentionFiltered.map((u, i) => {
     const inits = u.namaLengkap.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
     return `<div class="mention-item" data-idx="${i}" onmousedown="pickMention(${i})">
@@ -995,7 +995,7 @@ async function removeDependency(depId) {
 
 // ── Recurring ────────────────────────────────────────────────────────────────
 function initRecurringUI(task) {
-  const isMgrOrAbove = ['super_admin','direktur_coe','sekretaris_coe','wakil_direktur_coe','dosen'].includes(user?.role);
+  const isMgrOrAbove = ['super_admin','direktur_coe','sekretaris_coe','wakil_direktur_coe','dosen','member'].includes(user?.role);
   if (!isMgrOrAbove) return;
 
   document.getElementById('recurring-section').style.display = '';
@@ -1032,7 +1032,7 @@ async function saveRecurrence() {
 
 // ── Template ─────────────────────────────────────────────────────────────────
 function initTemplateSection() {
-  const isMgrOrAbove = ['super_admin','direktur_coe','sekretaris_coe','wakil_direktur_coe','dosen'].includes(user?.role);
+  const isMgrOrAbove = ['super_admin','direktur_coe','sekretaris_coe','wakil_direktur_coe','dosen','member'].includes(user?.role);
   if (isMgrOrAbove) document.getElementById('template-save-section').style.display = '';
 }
 

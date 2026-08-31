@@ -9,6 +9,8 @@ function buildSidebar(user, activePage) {
   const isDireksi    = user.role === 'sekretaris_coe';
   const isKomisaris  = user.role === 'wakil_direktur_coe';
   const isTopTier    = isSuperAdminAccount || isSuperadmin || isDireksi || isKomisaris;
+  // dosen & member: role dasar, tanpa akses KPI/Administrasi — hanya Task & Workspace
+  const isBasicRole  = user.role === 'dosen' || user.role === 'member';
   const inits     = (user.namaLengkap || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   const avColors  = ['#5B4FE8','#16A34A','#EA580C','#0D9488','#DB2777'];
   const avColor   = avColors[inits.charCodeAt(0) % avColors.length];
@@ -27,7 +29,9 @@ function buildSidebar(user, activePage) {
     { id: 'inbox',      href: '/inbox',      icon: 'ti-bell',             label: 'Notifikasi', section: 'tasks', badge: true },
     { id: 'messages',   href: '/messages',   icon: 'ti-message-circle',   label: 'Pesan',      section: 'workspace', badgeId: 'sb-dm-badge' },
     { id: 'channel',    href: '/channel',    icon: 'ti-messages',         label: 'Channel',    section: 'workspace' },
-    { id: 'kpi',        href: '/stats',      icon: 'ti-chart-bar',        label: 'KPI',        section: 'workspace' },
+    ...(isBasicRole ? [] : [
+      { id: 'kpi', href: '/stats', icon: 'ti-chart-bar', label: 'KPI', section: 'workspace' },
+    ]),
     { id: 'milestones', href: '/milestones', icon: 'ti-flag',             label: 'Milestones', section: 'workspace' },
     { id: 'workload',   href: '/workload',   icon: 'ti-users-group',      label: 'Workload',   section: 'workspace' },
     ...(isTopTier ? [
@@ -66,7 +70,8 @@ function buildSidebar(user, activePage) {
     ? `<img src="${user.fotoProfil}" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover">`
     : `<div class="sb-av" style="background:${avColor}">${inits}</div>`;
 
-  const roleLabel = isSuperAdminAccount ? 'Super Admin' : isSuperadmin ? 'Direktur CoE' : isDireksi ? 'Sekretaris CoE' : isKomisaris ? 'Wakil Direktur CoE' : (user.direktoratId?.nama || 'Dosen');
+  const basicRoleLabel = user.role === 'member' ? 'Member' : 'Dosen';
+  const roleLabel = isSuperAdminAccount ? 'Super Admin' : isSuperadmin ? 'Direktur CoE' : isDireksi ? 'Sekretaris CoE' : isKomisaris ? 'Wakil Direktur CoE' : (user.direktoratId?.nama || basicRoleLabel);
 
   return `
     <div class="sb-logo">

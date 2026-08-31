@@ -2,7 +2,7 @@ const router    = require('express').Router();
 const Milestone = require('../models/Milestone');
 const Task      = require('../models/Task');
 const auth      = require('../middleware/auth');
-const { requireRole, TOP_TIER_ROLES } = require('../middleware/roles');
+const { requireRole, TOP_TIER_ROLES, BASIC_ROLES } = require('../middleware/roles');
 
 // GET /api/milestones
 router.get('/', auth, async (req, res) => {
@@ -11,8 +11,8 @@ router.get('/', auth, async (req, res) => {
   if (direktoratId) filter.direktoratId = direktoratId;
   if (status) filter.status = status;
 
-  // dosen hanya lihat direktorat sendiri (jika tidak filter)
-  if (req.user.role === 'dosen' && !direktoratId) {
+  // dosen/member hanya lihat direktorat sendiri (jika tidak filter)
+  if (BASIC_ROLES.includes(req.user.role) && !direktoratId) {
     filter.$or = [
       { direktoratId: req.user.direktoratId?._id || req.user.direktoratId },
       { direktoratId: null },

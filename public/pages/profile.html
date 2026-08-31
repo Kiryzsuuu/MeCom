@@ -254,7 +254,7 @@
 if (!requireAuth()) throw 'redirect';
 let currentUser = getUser();
 
-const ROLE_MAP = { super_admin:'Super Admin', direktur_coe:'Direktur CoE', wakil_direktur_coe:'Wakil Direktur CoE', sekretaris_coe:'Sekretaris CoE', dosen:'Dosen' };
+const ROLE_MAP = { super_admin:'Super Admin', direktur_coe:'Direktur CoE', wakil_direktur_coe:'Wakil Direktur CoE', sekretaris_coe:'Sekretaris CoE', dosen:'Dosen', member:'Member' };
 
 function renderProfile(u) {
   const el = document.getElementById('avatar-el');
@@ -269,7 +269,7 @@ function renderProfile(u) {
   document.getElementById('profile-name').textContent    = u.namaLengkap;
   const roleName  = ROLE_MAP[u.role] || u.role;
   const dirSuffix = u.direktoratId?.kode ? ' - ' + u.direktoratId.kode : '';
-  document.getElementById('profile-role').textContent    = u.role === 'dosen' ? roleName + dirSuffix : roleName;
+  document.getElementById('profile-role').textContent    = (u.role === 'dosen' || u.role === 'member') ? roleName + dirSuffix : roleName;
   document.getElementById('profile-jabatan').textContent = u.jabatan || '';
 
   document.getElementById('f-enik').value  = u.enik  || '';
