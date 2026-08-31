@@ -156,15 +156,12 @@ router.get('/tasks/excel', auth, async (req, res) => {
 });
 
 // ── GET /api/reports/workload — beban kerja per user ─────────────────────────
-router.get('/workload', auth, async (req, res) => {
+// Hanya top-tier (Super Admin/Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) yang boleh lihat
+router.get('/workload', auth, requireRole('sekretaris_coe'), async (req, res) => {
   const ACTIVE_STATUS = ['to_do','on_progress','partially_complete'];
 
-  // Direktur CoE/Wakil Direktur CoE bisa lihat semua; dosen/member/sekretaris_coe hanya direktoratnya (kecuali sekretaris_coe tetap bisa lihat semua sbg viewer top-tier)
   const userFilter = { statusAktif: true, role: { $in: KPI_SUBJECT_ROLES } };
-  if (BASIC_ROLES.includes(req.user.role)) {
-    const userDirId = req.user.direktoratId?._id || req.user.direktoratId;
-    userFilter.direktoratId = userDirId;
-  }
+  if (req.query.direktoratId) userFilter.direktoratId = req.query.direktoratId;
 
   const users = await User.find(userFilter)
     .populate('direktoratId', 'nama kode')

@@ -30,10 +30,10 @@ function buildSidebar(user, activePage) {
     { id: 'messages',   href: '/messages',   icon: 'ti-message-circle',   label: 'Pesan',      section: 'workspace', badgeId: 'sb-dm-badge' },
     { id: 'channel',    href: '/channel',    icon: 'ti-messages',         label: 'Channel',    section: 'workspace' },
     ...(isBasicRole ? [] : [
-      { id: 'kpi', href: '/stats', icon: 'ti-chart-bar', label: 'KPI', section: 'workspace' },
+      { id: 'kpi',      href: '/stats',    icon: 'ti-chart-bar',   label: 'KPI',      section: 'workspace' },
+      { id: 'workload', href: '/workload', icon: 'ti-users-group', label: 'Workload', section: 'workspace' },
     ]),
     { id: 'milestones', href: '/milestones', icon: 'ti-flag',             label: 'Milestones', section: 'workspace' },
-    { id: 'workload',   href: '/workload',   icon: 'ti-users-group',      label: 'Workload',   section: 'workspace' },
     ...(isTopTier ? [
       { id: 'users',  href: '/settings', icon: 'ti-users',        label: 'Manajemen User', section: 'admin' },
       { id: 'audit',  href: '/audit',    icon: 'ti-shield-check', label: 'Audit Trail',    section: 'admin' },
