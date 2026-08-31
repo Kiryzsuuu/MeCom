@@ -2,6 +2,8 @@
 // dosen dan member setara: hanya akses Task & Workspace, tanpa KPI dan Administrasi
 const TOP_TIER_ROLES = ['super_admin', 'direktur_coe', 'wakil_direktur_coe', 'sekretaris_coe'];
 const BASIC_ROLES = ['dosen', 'member'];
+// Sekretaris CoE tetap top-tier (akses admin), tapi juga ikut dihitung sebagai anggota tim di KPI/Workload
+const KPI_SUBJECT_ROLES = ['dosen', 'member', 'sekretaris_coe'];
 const ROLE_LEVEL = { super_admin: 2, direktur_coe: 2, wakil_direktur_coe: 2, sekretaris_coe: 2, dosen: 1, member: 1 };
 
 function requireRole(...roles) {
@@ -25,4 +27,4 @@ function requireDireksiUp(req, res, next) {
   return res.status(403).json({ message: 'Akses ditolak: hanya Sekretaris CoE ke atas' });
 }
 
-module.exports = { requireRole, requireSuperadmin, requireDireksiUp, ROLE_LEVEL, TOP_TIER_ROLES, BASIC_ROLES };
+module.exports = { requireRole, requireSuperadmin, requireDireksiUp, ROLE_LEVEL, TOP_TIER_ROLES, BASIC_ROLES, KPI_SUBJECT_ROLES };

@@ -4,7 +4,7 @@ const ExcelJS  = require('exceljs');
 const User     = require('../models/User');
 const Task     = require('../models/Task');
 const auth     = require('../middleware/auth');
-const { requireRole, BASIC_ROLES } = require('../middleware/roles');
+const { requireRole, BASIC_ROLES, KPI_SUBJECT_ROLES } = require('../middleware/roles');
 const { hitungKpiManager, hitungGrade, labelGrade } = require('../services/kpi');
 
 // GET /api/reports/kpi/pdf
@@ -14,7 +14,7 @@ router.get('/kpi/pdf', auth, requireRole('sekretaris_coe'), async (req, res) => 
   const tahun      = parseInt(req.query.tahun) || now.getFullYear();
   const BULAN_NAMA = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
-  const managers = await User.find({ role: { $in: BASIC_ROLES }, statusAktif: true }).populate('direktoratId', 'nama');
+  const managers = await User.find({ role: { $in: KPI_SUBJECT_ROLES }, statusAktif: true }).populate('direktoratId', 'nama');
   const rows = await Promise.all(managers.map(async m => ({
     nama:        m.namaLengkap,
     direktorat:  m.direktoratId?.nama || '-',
@@ -65,7 +65,7 @@ router.get('/kpi/excel', auth, requireRole('sekretaris_coe'), async (req, res) =
   const bulan = parseInt(req.query.bulan) || now.getMonth() + 1;
   const tahun = parseInt(req.query.tahun) || now.getFullYear();
 
-  const managers = await User.find({ role: { $in: BASIC_ROLES }, statusAktif: true }).populate('direktoratId', 'nama');
+  const managers = await User.find({ role: { $in: KPI_SUBJECT_ROLES }, statusAktif: true }).populate('direktoratId', 'nama');
   const rows = await Promise.all(managers.map(async m => ({
     nama:       m.namaLengkap,
     email:      m.email,
@@ -159,8 +159,8 @@ router.get('/tasks/excel', auth, async (req, res) => {
 router.get('/workload', auth, async (req, res) => {
   const ACTIVE_STATUS = ['to_do','on_progress','partially_complete'];
 
-  // Hanya top-tier (Direktur CoE/Wakil Direktur CoE/Sekretaris CoE) bisa lihat semua; dosen/member hanya direktoratnya
-  const userFilter = { statusAktif: true, role: { $in: BASIC_ROLES } };
+  // Direktur CoE/Wakil Direktur CoE bisa lihat semua; dosen/member/sekretaris_coe hanya direktoratnya (kecuali sekretaris_coe tetap bisa lihat semua sbg viewer top-tier)
+  const userFilter = { statusAktif: true, role: { $in: KPI_SUBJECT_ROLES } };
   if (BASIC_ROLES.includes(req.user.role)) {
     const userDirId = req.user.direktoratId?._id || req.user.direktoratId;
     userFilter.direktoratId = userDirId;

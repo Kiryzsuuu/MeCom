@@ -6,7 +6,7 @@ const mailer   = require('../services/mailer');
 const wa       = require('../services/whatsapp');
 const { simpanSnapshot } = require('../services/kpi');
 const push     = require('../services/push');
-const { TOP_TIER_ROLES } = require('../middleware/roles');
+const { TOP_TIER_ROLES, KPI_SUBJECT_ROLES } = require('../middleware/roles');
 
 function hariKerja(tanggal) {
   const hari = tanggal.getDay();
@@ -161,11 +161,11 @@ function startCronJobs() {
       const now      = new Date();
       const bulan    = now.getMonth() === 0 ? 12 : now.getMonth();
       const tahun    = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-      const managers = await User.find({ role: 'dosen', statusAktif: true });
+      const managers = await User.find({ role: { $in: KPI_SUBJECT_ROLES }, statusAktif: true });
       for (const m of managers) {
         await simpanSnapshot(m._id, bulan, tahun).catch(() => {});
       }
-      console.log(`[Cron KPI] Snapshot ${bulan}/${tahun} disimpan untuk ${managers.length} dosen`);
+      console.log(`[Cron KPI] Snapshot ${bulan}/${tahun} disimpan untuk ${managers.length} anggota`);
     } catch (err) {
       console.error('[Cron KPI]', err.message);
     }

@@ -303,7 +303,7 @@ async function init() {
     const fUser = document.getElementById('f-user');
     const data  = await Users.list({}).catch(() => ({}));
     const allUsersList = data.users || data || [];
-    const mgrs  = allUsersList.filter(u => u.role === 'dosen' || u.role === 'member');
+    const mgrs  = allUsersList.filter(u => ['dosen','member','sekretaris_coe'].includes(u.role));
     mgrs.forEach(m => {
       const o = document.createElement('option'); o.value = m._id; o.textContent = m.namaLengkap;
       fUser.appendChild(o);
